@@ -1,0 +1,27 @@
+<template>
+  <svg
+    width="24px"
+    height="24px"
+    viewBox="0 0 64 64"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    aria-hidden="true"
+    role="img"
+    class="iconify iconify--emojione-monotone"
+    preserveAspectRatio="xMidYMid meet"
+  >
+    <path
+      d="M62 10.571L53.429 2L32 23.429L10.571 2L2 10.571L23.429 32L2 53.429L10.571 62L32 40.571L53.429 62L62 53.429L40.571 32z"
+      :fill="props.color"
+    ></path>
+  </svg>
+</template>
+
+<script setup>
+const props = defineProps({
+  color: {
+    type: String,
+    default: 'red',
+  },
+})
+</script>
