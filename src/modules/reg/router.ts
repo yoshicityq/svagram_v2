@@ -1,4 +1,3 @@
-
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
 const router = {
@@ -7,6 +6,7 @@ const router = {
   meta: {
     title: 'Регистрация',
     layout: AuthLayout,
+    requiresAuth: false,
   },
   component: () => import('@/modules/reg/views/RegView.vue'),
 }

@@ -10,7 +10,9 @@
           <span>{{ postsQuantity }} posts</span>
           <span v-if="userData?.city">City: {{ userData?.city }}</span>
           <span v-if="userData?.description">Description: {{ userData?.description }}</span>
-          <!-- <span>Favorite brands:</span> -->
+          <span v-if="userData?.favorite_brands"
+            >Favorite brands: {{ userData.favorite_brands }}</span
+          >
         </div>
       </div>
       <div class="actions-block">
@@ -31,7 +33,7 @@ import MyButton from '@/components/UI/MyButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import useModalStore from '@/stores/modals'
 import PostList from '../components/PostList.vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeMount, onMounted, ref, watch } from 'vue'
 import { apiFetch } from '@/api/apiFetch'
 import CreatePostDialog from '../components/CreatePostDialog.vue'
 import OpenPostDialog from '../components/OpenPostDialog.vue'
@@ -49,13 +51,32 @@ type User = {
   description: string
   hasAvatar: string
   avatarUrl: string
+  favorite_brands: string
 }
 const userData = ref<User>()
 let selectedBrand = ref('')
+const previewAvatar = ref<string | null>(null)
 
-const userAvatar = computed(() =>
-  userData.value?.hasAvatar ? `http://localhost:3000${userData.value.avatarUrl}` : noAvatar,
+const userAvatar = computed(() => {
+  if (!previewAvatar.value) {
+    if (userData.value?.hasAvatar) {
+      return `http://localhost:3000${userData.value.avatarUrl}`
+    }
+    return noAvatar
+  }
+
+  return previewAvatar.value
+})
+watch(
+  () => userData.value,
+  async () => {
+    if (!userData.value) {
+      await getProfileData()
+    }
+  },
+  { immediate: true },
 )
+
 const modalStore = useModalStore()
 async function getProfileData() {
   const response = await apiFetch(`/users/${username}`)
@@ -84,8 +105,22 @@ watch(
   { immediate: true },
 )
 
+async function getProfileImg() {
+  const res = await apiFetch(`/users/${username}/avatar`)
+
+  if (!res.ok) {
+    previewAvatar.value = null
+  } else {
+    const blob = await res.blob()
+    previewAvatar.value = URL.createObjectURL(blob)
+    console.log(previewAvatar.value)
+  }
+}
 onMounted(() => {
   getProfileData()
+})
+onBeforeMount(async () => {
+  await getProfileImg()
 })
 </script>
 
@@ -116,9 +151,12 @@ onMounted(() => {
   background-color: blueviolet;
   overflow: hidden;
   position: relative;
+  object-fit: contain;
 }
 .avatar {
-  width: 150px;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
   background: transparent;
   position: absolute;
   top: 20px;

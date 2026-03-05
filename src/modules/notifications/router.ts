@@ -6,6 +6,7 @@ const router = {
   meta: {
     title: 'Уведомления',
     layout: MainLayout,
+    requiresAuth: true,
   },
   component: () => import('@/modules/notifications/views/NotificationsView.vue'),
 }

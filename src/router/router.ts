@@ -6,8 +6,8 @@ import notifications from '@/modules/notifications'
 import profile from '@/modules/profile'
 import reg from '@/modules/reg'
 import settings from '@/modules/settings'
+import useAuthStore from '@/stores/auth'
 import { createRouter, createWebHistory } from 'vue-router'
-
 const routes = [
   {
     path: '/',
@@ -34,4 +34,12 @@ const router = createRouter({
   routes: all_routes,
 })
 
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+
+  if (to.meta.requiresAuth && !auth.user) {
+    alert('Need to authorize to watch this page :(')
+    return '/auth'
+  }
+})
 export default router

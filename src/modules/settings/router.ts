@@ -5,6 +5,7 @@ const router = {
   meta: {
     title: 'Настройки',
     layout: MainLayout,
+    requiresAuth: true,
   },
   component: () => import('@/modules/settings/views/SettingsView.vue'),
   redirect: { name: 'system' },

@@ -6,6 +6,7 @@ const router = {
   meta: {
     title: 'Вход',
     layout: AuthLayout,
+    requiresAuth: false,
   },
   component: () => import('@/modules/auth/views/AuthView.vue'),
 }

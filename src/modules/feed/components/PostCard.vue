@@ -31,7 +31,7 @@
       </div>
     </div>
     <div class="footer">
-      <EstimatePost />
+      <EstimatePost :post-id="post.id" :is-clickable="true" />
       <div class="post-description">
         <span>{{ post.description }}</span>
       </div>

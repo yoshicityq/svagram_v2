@@ -5,30 +5,38 @@
       <span v-show="sidebarStore.isOpen">SWAGRAM</span>
     </div>
     <div class="body">
-      <MyButton :is-sidebar-opened="sidebarStore.isOpen" :icon="SearchIcon" color="primary"
-        >Search</MyButton
-      >
-      <MyButton
-        :is-sidebar-opened="sidebarStore.isOpen"
-        :icon="FeedIcon"
-        @click="router.push('/feed')"
-        color="primary"
-        >Feed</MyButton
-      >
+      <div v-show="!sidebarStore.isSearchActive" class="body_buttons">
+        <MyButton
+          :is-sidebar-opened="sidebarStore.isOpen"
+          :icon="SearchIcon"
+          color="primary"
+          @click="sidebarStore.toggleSearch"
+          >Search</MyButton
+        >
+        <MyButton
+          :is-sidebar-opened="sidebarStore.isOpen"
+          :icon="FeedIcon"
+          @click="router.push('/feed')"
+          color="primary"
+          >Feed</MyButton
+        >
+        <MyButton
+          :is-sidebar-opened="sidebarStore.isOpen"
+          :icon="SettingsIcon"
+          @click="router.push('/settings')"
+          color="primary"
+          >Settings</MyButton
+        >
+      </div>
+      <SearchDialog />
       <!-- <MyButton
         :is-sidebar-opened="sidebarStore.isOpen"
         :icon="NotificationsIcon"
         @click="router.push('/notifications')"
         >Notifications</MyButton
       > -->
-      <!-- <MyButton
-        :is-sidebar-opened="sidebarStore.isOpen"
-        :icon="SettingsIcon"
-        @click="router.push('/settings')"
-        >Settings</MyButton
-      > -->
     </div>
-    <div class="footer">
+    <div v-show="!sidebarStore.isSearchActive" class="footer">
       <UserProfile :username="username" :closable="true" />
       <MyButton
         :icon="LogoutIcon"
@@ -64,6 +72,7 @@ import useAuthStore from '@/stores/auth'
 import UserProfile from '@/components/UserProfile.vue'
 import LogoutIcon from '@/assets/icons/LogoutIcon.vue'
 import { logoutUser } from '../api/actions'
+import SearchDialog from './SearchDialog.vue'
 
 const sidebarStore = useSidebarStore()
 const authStore = useAuthStore()
@@ -114,6 +123,12 @@ async function logout() {
   gap: 15px;
   margin-top: 20px;
   width: 100%;
+  .body_buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 15px;
+  }
 }
 .footer {
   display: flex;

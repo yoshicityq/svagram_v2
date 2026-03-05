@@ -1,36 +1,101 @@
 <template>
-  <div class="city-select">
-    <div class="input">
+  <div class="city-select" ref="citySelectRef">
+    <div class="input" :class="{ input__active: isInputFocused }">
       <input
         v-model.trim="inputValue"
         type="text"
-        placeholder="Choose city"
         @focusin="isInputFocused = true"
+        placeholder="Choose city"
       />
-      <ChevronIcon
-        @click="isInputFocused = !isInputFocused"
-        class="chevron"
-        :class="{ active: isInputFocused }"
-      />
+      <ChevronIcon class="chevron" v-show="!isCityChosen" :class="{ active: isInputFocused }" />
+      <CrossIcon class="cross" v-show="isCityChosen" color="blueviolet" @click="clearInput" />
     </div>
-    <div v-if="isInputFocused" class="list">
-      <div v-for="city in searchCities" class="list-item" @click="chooseCity(city)">
-        {{ city }}
-      </div>
+    <div v-if="isInputFocused && !isCityChosen" class="list">
+      <template v-if="searchCities.length">
+        <div v-for="city in searchCities" :key="city" class="list-item" @click="chooseCity(city)">
+          {{ city }}
+        </div>
+      </template>
+
+      <div v-else class="not-found">Город не найден</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import ChevronIcon from '@/assets/icons/ChevronIcon.vue'
-import { computed, ref } from 'vue'
+import CrossIcon from '@/assets/icons/CrossIcon.vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+
+const props = defineProps({
+  userCity: {
+    type: String,
+  },
+  modelValue: {
+    type: String,
+    required: true,
+  },
+})
+const citySelectRef = ref<HTMLElement | null>(null)
+let inputValue = ref<string>('')
+let isCityChosen = ref<boolean>(false)
+let isInputFocused = ref<boolean>(false)
+let chosenCity = ref<string>('')
+
+function clearInput() {
+  inputValue.value = ''
+  isCityChosen.value = false
+  chosenCity.value = ''
+}
+const emits = defineEmits(['update:modelValue'])
+function chooseCity(city: string) {
+  inputValue.value = city
+  isCityChosen.value = true
+  chosenCity.value = city
+  emits('update:modelValue', city)
+}
+watch(
+  () => props.userCity,
+  () => {
+    if (props.userCity) {
+      inputValue.value = props.userCity
+      chosenCity.value = props.userCity
+      isCityChosen.value = true
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => inputValue.value,
+  () => {
+    if (chosenCity.value !== inputValue.value) isCityChosen.value = false
+  },
+  { immediate: true },
+)
 let searchCities = computed(() => {
   if (inputValue.value) {
-    return cities.filter((city) => city.toLowerCase().includes(inputValue.value))
+    return cities.filter((city) => city.toLowerCase().includes(inputValue.value.toLowerCase()))
   } else {
     return cities
   }
 })
+function handleClickOutside(event: MouseEvent) {
+  const target = event.target as Node
+
+  if (citySelectRef.value && !citySelectRef.value.contains(target)) {
+    isInputFocused.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
 const cities = [
   'Москва',
   'Санкт-Петербург',
@@ -138,38 +203,34 @@ const cities = [
   'Краснослободск',
   'Железногорск',
 ]
-let inputValue = ref('')
-let isInputFocused = ref(false)
-const emits = defineEmits(['chooseCity'])
-function chooseCity(city: string) {
-  inputValue.value = city
-  isInputFocused.value = false
-  emits('chooseCity', inputValue.value)
-}
 </script>
 
 <style scoped lang="scss">
 .city-select {
-  width: fit-content;
   position: relative;
 }
 
 .input {
   display: flex;
   align-items: center;
-  border: 1px solid black;
+  border: 2px solid rgba(86, 86, 86, 0.34);
+  width: 100%;
   padding: 3px;
   border-radius: 5px;
   input {
     border: none;
+    width: 100%;
   }
   input:focus {
     outline: none;
   }
+  &__active {
+    border: 2px solid blueviolet;
+  }
 }
 .list {
   position: absolute;
-  border: 1px solid black;
+  border: 2px solid blueviolet;
   padding: 3px;
   border-radius: 5px;
   top: 40px;
@@ -182,12 +243,16 @@ function chooseCity(city: string) {
     cursor: pointer;
   }
   .list-item:hover {
-    color: blue;
+    color: blueviolet;
   }
 }
 .chevron {
   transition: all ease 0.4s;
+}
+.cross {
+  width: 10px;
   cursor: pointer;
+  margin-right: 5px;
 }
 .active {
   transform: rotate(180deg);

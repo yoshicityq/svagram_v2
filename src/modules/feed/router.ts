@@ -6,6 +6,7 @@ const router = {
   meta: {
     layout: MainLayout,
     title: 'Лента',
+    requiresAuth: true,
   },
   component: () => import('@/modules/feed/views/FeedView.vue'),
 }

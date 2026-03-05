@@ -231,7 +231,19 @@ app.post('/auth/logout', (req, res) => {
 app.get('/me', authRequired, (req, res) => {
   res.json({ user: req.user })
 })
+app.get('/users/search/:prefix', authRequired, (req, res, next) => {
+  const prefix = String(req.params.prefix ?? '').trim()
 
+  // лимит можно оставить фиксированным, раз вы не хотите query
+  const limit = 10
+
+  if (!prefix) return res.json({ usernames: [] })
+
+  User.searchUsernames(prefix, { limit }, (err, usernames) => {
+    if (err) return next(err)
+    res.json({ usernames })
+  })
+})
 app.get('/users/:username', authRequired, (req, res, next) => {
   const username = req.params.username
 
@@ -245,6 +257,7 @@ app.get('/users/:username', authRequired, (req, res, next) => {
         username: user.username,
         city: user.city,
         description: user.description ?? '',
+        favorite_brands: user.favorite_brands ?? null,
         hasAvatar: !!user.img_mimetype,
         avatarUrl: user.img_mimetype ? `/users/${user.username}/avatar` : null,
       },
@@ -445,7 +458,7 @@ app.post('/posts/:id/rating', authRequired, (req, res, next) => {
 app.patch('/me', authRequired, upload.single('profile_img'), (req, res, next) => {
   try {
     // текстовые поля из multipart приходят в req.body строками
-    const { username, city, description, img_mimetype } = req.body ?? {}
+    const { username, city, description, favorite_brands, img_mimetype } = req.body ?? {}
 
     // запретим ручное изменение img_mimetype
     if (img_mimetype !== undefined) {
@@ -457,7 +470,7 @@ app.patch('/me', authRequired, upload.single('profile_img'), (req, res, next) =>
     if (username !== undefined && username !== '') patch.username = username
     if (city !== undefined && city !== '') patch.city = city
     if (description !== undefined) patch.description = description // описание может быть пустым
-
+    if (favorite_brands !== undefined) patch.favorite_brands = favorite_brands
     // файл аватара
     if (req.file) {
       patch.profile_img = req.file.buffer
@@ -484,6 +497,7 @@ app.patch('/me', authRequired, upload.single('profile_img'), (req, res, next) =>
             username: user.username,
             city: user.city,
             description: user.description ?? '',
+            favorite_brands: user.favorite_brands ?? null,
             hasAvatar: !!user.img_mimetype,
             avatarUrl: user.img_mimetype ? `/users/${user.username}/avatar` : null,
           },

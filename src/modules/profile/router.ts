@@ -6,6 +6,7 @@ const router = {
   meta: {
     title: 'Профиль',
     layout: MainLayout,
+    requiresAuth: true,
   },
   component: () => import('@/modules/profile/views/ProfileView.vue'),
 }

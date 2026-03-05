@@ -108,10 +108,10 @@ async function publishPost() {
 
   const formData = new FormData(form.value as HTMLFormElement)
   formData.set('brand_h', brand_h.value)
-  formData.set('brand_tt', brand_h.value)
-  formData.set('brand_t', brand_h.value)
-  formData.set('brand_b', brand_h.value)
-  formData.set('brand_s', brand_h.value)
+  formData.set('brand_tt', brand_tt.value)
+  formData.set('brand_t', brand_t.value)
+  formData.set('brand_b', brand_b.value)
+  formData.set('brand_s', brand_s.value)
 
   const response = await apiFetch('/posts/create', {
     method: 'POST',

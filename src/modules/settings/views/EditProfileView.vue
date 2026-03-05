@@ -3,69 +3,87 @@
     <div class="header">
       <span class="header-title">Edit Profile</span>
     </div>
-    <form ref="form" @submit.prevent="sendData" class="form">
-      <div class="stats-list">
-        <div class="stat">
-          <span class="stat-name">Avatar:</span>
-          <div class="avatar-actions">
-            <label class="avatar" for="file">
-              <img class="avatar-img" :src="previewUrl ? previewUrl : userAvatar" alt="" />
-            </label>
-            <input
-              ref="fileInput"
-              type="file"
-              id="file"
-              name="profile_img"
-              accept="image/*"
-              class="avatar-input"
-              @change="onFileChange"
-            />
-            <div class="btns">
-              <button type="button" @click="openFileDialog">Upload new avatar</button>
-              <button>Choose from posts</button>
-              <button type="button" @click="deleteAvatar">Delete avatar</button>
+
+    <div class="body">
+      <form @submit.prevent ref="form" class="body_form">
+        <div class="avatar-actions">
+          <label class="avatar" for="file">
+            <img class="avatar-img" :src="userAvatar" :class="{ preview: previewAvatar }" alt="" />
+          </label>
+
+          <input
+            ref="fileInput"
+            type="file"
+            id="file"
+            name="profile_img"
+            accept="image/*"
+            class="avatar-input"
+            @change="onFileChange"
+          />
+
+          <div class="btns">
+            <MyButton @click.prevent="openFileDialog">Upload new avatar</MyButton>
+            <MyButton>Choose from posts</MyButton>
+            <MyButton @click.prevent="deleteAvatar">Delete avatar</MyButton>
+          </div>
+        </div>
+
+        <div class="userdata">
+          <div class="stat">
+            <span class="stat-name">Username</span>
+            <div class="stat-value">
+              <MyInput :placeholder="userData?.username!" style="width: 100%" />
+            </div>
+          </div>
+
+          <div class="stat">
+            <span class="stat-name">Description</span>
+            <textarea
+              name="description"
+              v-model="description"
+              :placeholder="description ? '' : 'Tell smth about yourself'"
+              class="description-text"
+            ></textarea>
+          </div>
+
+          <div class="stat">
+            <span class="stat-name">City</span>
+            <CitySelect :user-city="userData?.city" v-model="chosenCity" name="city" />
+          </div>
+
+          <div class="stat">
+            <span class="stat-name">Favorite brands</span>
+
+            <div class="add-brand">
+              <div v-for="(brand, index) in favoriteBrands" :key="index" class="brand-row">
+                <BrandSelect :model-value="brand" @update:modelValue="updateBrand(index, $event)" />
+
+                <MyButton v-if="favoriteBrands.length > 1" @click.prevent="removeBrand(index)">
+                  -
+                </MyButton>
+              </div>
+
+              <MyButton @click.prevent="addBrandSelect">+</MyButton>
             </div>
           </div>
         </div>
-        <div class="stat">
-          <span class="stat-name">Username:</span>
-          <input class="city-text" name="username" type="text" :placeholder="userData?.username" />
-        </div>
-        <div class="stat">
-          <span class="stat-name">Description:</span>
-          <textarea
-            class="description-text"
-            :placeholder="userData?.description || 'Type smth'"
-            name="description"
-          ></textarea>
-        </div>
-        <div class="stat">
-          <span class="stat-name">City:</span>
-          <CitySelect v-model="chosenCity"/>
-        </div>
-        <div class="stat">
-          <span class="stat-name">Favorite Brands:</span>
-          <div class="brands">
-            <div v-for="n in count" class="brand-item">
-              <BrandSelect />
-              <button v-if="n !== 1" @click="count--">-</button>
-            </div>
-            <button type="button" @click="count++">+</button>
-          </div>
-        </div>
-      </div>
-      <button type="submit"">Submit Changes</button>
-    </form>
+
+        <MyButton color="primary" class="submit_btn" @click="sendData">Save</MyButton>
+      </form>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { apiFetch } from '@/api/apiFetch'
-import noAvatar from '@/assets/images/no_avatar.png'
 import BrandSelect from '@/components/BrandSelect.vue'
 import CitySelect from '@/components/CitySelect.vue'
+import MyButton from '@/components/UI/MyButton.vue'
+import MyInput from '@/components/UI/MyInput.vue'
+import { computed, onBeforeMount, ref, useTemplateRef, watch } from 'vue'
+import noAvatar from '@/assets/images/no_avatar.png'
 import useAuthStore from '@/stores/auth'
-import { computed, onBeforeMount, onMounted, ref, useTemplateRef } from 'vue'
+import { apiFetch } from '@/api/apiFetch'
+
 type User = {
   id: string | number
   username: string
@@ -73,33 +91,87 @@ type User = {
   description: string
   hasAvatar: boolean
   avatarUrl: string
+  favorite_brands: string
 }
-let count = ref(1)
-const userData = ref<User>()
 
-const userAvatar = computed(() =>
-  userData.value?.hasAvatar ? `http://localhost:3000${userData.value.avatarUrl}` : noAvatar,
-)
-const previewUrl = ref<string | null>(null)
+const authStore = useAuthStore()
+const userData = ref<User | null>(null)
+const previewAvatar = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
-const fileInput = ref<HTMLInputElement | null>()
-  const chosenCity = ref<string>('')
-function openFileDialog() {
-  fileInput.value?.click()
+const fileInput = ref<HTMLInputElement | null>(null)
+const form = useTemplateRef('form')
+
+const chosenCity = ref<string>('')
+const favoriteBrands = ref<string[]>([''])
+const description = ref('')
+
+const userAvatar = computed(() => {
+  if (!previewAvatar.value) {
+    if (userData.value?.hasAvatar) {
+      return `http://localhost:3000${userData.value.avatarUrl}`
+    }
+    return noAvatar
+  }
+
+  return previewAvatar.value
+})
+
+watch(
+  () => userData.value,
+  async () => {
+    if (!userData.value) {
+      await getProfileData()
+    }
+  },
+  { immediate: true },
+)
+
+async function getProfileData() {
+  const response = await apiFetch(`/users/${authStore.user?.username}`)
+  const data = await response.json()
+  userData.value = data.user
+
+  if (userData.value) {
+    description.value = userData.value.description ?? ''
+    chosenCity.value = userData.value.city ?? ''
+
+    favoriteBrands.value = userData.value.favorite_brands.split(', ')
+  }
+
+  console.log(userData.value)
 }
-function deleteAvatar() {
-  cleanupPreview()
-  ;async () => {
-    const response = await apiFetch(`/me/avatar`, { method: 'DELETE' })
-    const data = await response.json()
-    console.log(data)
+
+async function getProfileImg() {
+  const res = await apiFetch(`/users/${authStore.user?.username}/avatar`)
+
+  if (!res.ok) {
+    previewAvatar.value = null
+  } else {
+    const blob = await res.blob()
+    cleanupPreview()
+    previewAvatar.value = URL.createObjectURL(blob)
+    console.log(previewAvatar.value)
   }
 }
 
+function openFileDialog() {
+  fileInput.value?.click()
+}
+
+async function deleteAvatar() {
+  cleanupPreview()
+  const response = await apiFetch('/me/avatar', {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+  const data = await response.json()
+  console.log(data)
+}
+
 function cleanupPreview() {
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
-    previewUrl.value = null
+  if (previewAvatar.value) {
+    URL.revokeObjectURL(previewAvatar.value)
+    previewAvatar.value = null
   }
 }
 
@@ -107,26 +179,48 @@ function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0] ?? null
   if (!file) return
-
-  // можно дополнительно проверить тип
   if (!file.type.startsWith('image/')) return
 
   selectedFile.value = file
-
-  // освобождаем старый превью и создаём новый
   cleanupPreview()
-  previewUrl.value = URL.createObjectURL(file)
+  previewAvatar.value = URL.createObjectURL(file)
 }
-const authStore = useAuthStore()
-const form = useTemplateRef('form')
+
+function addBrandSelect() {
+  favoriteBrands.value.push('')
+}
+
+function updateBrand(index: number, brand: string) {
+  favoriteBrands.value[index] = brand
+}
+
+function removeBrand(index: number) {
+  favoriteBrands.value.splice(index, 1)
+
+  if (!favoriteBrands.value.length) {
+    favoriteBrands.value.push('')
+  }
+}
 
 async function sendData() {
-
   const formData = new FormData(form.value as HTMLFormElement)
 
   if (selectedFile.value) {
     formData.set('profile_img', selectedFile.value)
   }
+
+  if (chosenCity.value) {
+    formData.set('city', chosenCity.value)
+  }
+
+  formData.set('description', description.value)
+
+  const favoriteBrandsString = favoriteBrands.value
+    .map((brand) => brand.trim())
+    .filter(Boolean)
+    .join(', ')
+
+  formData.set('favorite_brands', favoriteBrandsString)
 
   const response = await apiFetch('/me', {
     method: 'PATCH',
@@ -143,23 +237,11 @@ async function sendData() {
   } else {
     alert(data.message || 'Update failed')
   }
+
   await getProfileImg()
 }
-async function getProfileData() {
-  const response = await apiFetch(`/users/${authStore.user?.username}`)
-  const data = await response.json()
-  userData.value = data.user
-}
-async function getProfileImg() {
-    const res = await apiFetch(`/users/${authStore.user?.username}/avatar`)
-    const blob = await res.blob()
-    previewUrl.value = URL.createObjectURL(blob)
-    console.log(previewUrl.value)
-}
-
 
 onBeforeMount(async () => {
-  await getProfileData()
   await getProfileImg()
 })
 </script>
@@ -168,6 +250,7 @@ onBeforeMount(async () => {
 .edit-view {
   flex: 1;
 }
+
 .header {
   border-bottom: 1px solid #ccc;
 
@@ -178,78 +261,127 @@ onBeforeMount(async () => {
   }
 }
 
-.form {
+.body {
+  display: flex;
+  justify-content: center;
+}
+
+.body_form {
   margin-top: 20px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: fit-content;
 }
 
-.stats-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  .stat {
-    display: flex;
-    gap: 10px;
-    .stat-name {
-      width: 200px;
-      text-align: end;
-    }
-  }
-}
-
-.brands {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  .brand-item {
-    display: flex;
-    gap: 5px;
-  }
-}
 .avatar-actions {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 20px;
+  border: 1px solid blueviolet;
+  border-radius: 7px;
+  padding: 15px;
+  width: 400px;
+  justify-content: space-between;
+
   .btns {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 10px;
   }
 }
+
 .avatar {
-  width: 100px;
-  height: 100px;
+  width: 175px;
+  height: 175px;
   border: 1px solid #ccc;
   border-radius: 50%;
   overflow: hidden;
+  background-color: blueviolet;
+  position: relative;
+
   .avatar-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    position: absolute;
+    top: 20px;
+    left: 2px;
+    right: 0;
+    bottom: 0;
   }
 }
+
+.preview {
+  top: 0 !important;
+  left: 0 !important;
+}
+
 .avatar-input {
   display: none;
 }
+
+.userdata {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+  border: 1px solid blueviolet;
+  width: 100%;
+  padding: 15px;
+  border-radius: 7px;
+  gap: 10px;
+}
+
+.stat {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+
+  &-name {
+    width: 150px !important;
+  }
+
+  &-value {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+.city-select {
+  width: 100%;
+  max-width: 200px;
+}
+
+.submit_btn {
+  margin-top: 20px;
+}
+
 .description-text {
   min-width: 200px;
   min-height: 75px;
   padding: 3px;
   font-size: 13px;
   resize: none;
-}
-.description-text:focus {
-  outline: none;
+  border: 2px solid rgba(86, 86, 86, 0.34);
+  border-radius: 3px;
 }
 
-.city-text {
-  width: 200px;
-  padding: 3px;
-}
-.city-text:focus {
+.description-text:focus {
   outline: none;
+  border: 2px solid blueviolet;
+  border-radius: 3px;
+}
+
+.add-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brand-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 </style>

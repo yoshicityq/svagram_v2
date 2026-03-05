@@ -11,7 +11,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterView, useRoute } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
+import useAuthStore from './stores/auth'
 
 const route = useRoute()
 

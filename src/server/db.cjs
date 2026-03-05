@@ -7,16 +7,17 @@ db.serialize(() => {
   db.run('PRAGMA foreign_keys = ON')
 
   const sql_users = `
-    CREATE TABLE IF NOT EXISTS users
-      (id integer primary key,
-      email TEXT NOT NULL UNIQUE,
-      username TEXT NOT NULL UNIQUE, 
-      password TEXT NOT NULL,
-      profile_img BLOB,
-      img_mimetype CHAR(16),
-      city TEXT NOT NULL,
-      description TEXT)
-  `
+  CREATE TABLE IF NOT EXISTS users
+    (id integer primary key,
+    email TEXT NOT NULL UNIQUE,
+    username TEXT NOT NULL UNIQUE, 
+    password TEXT NOT NULL,
+    profile_img BLOB,
+    img_mimetype CHAR(16),
+    city TEXT NOT NULL,
+    description TEXT,
+    favorite_brands TEXT)
+`
   const sql_posts = `
     CREATE TABLE IF NOT EXISTS posts 
       (id integer primary key,
@@ -111,22 +112,38 @@ class User {
 
   //Создание нового пользователя
   static create(data, cb) {
-    const sql = 'INSERT INTO users(username, password, city, email) VALUES(?, ?, ?, ?)'
+    const sql =
+      'INSERT INTO users(username, password, city, email, favorite_brands) VALUES(?, ?, ?, ?, ?)'
 
-    // важно: используем function, чтобы получить this.lastID
-    db.run(sql, data.username, data.passwordHash, data.city, data.email, function (err) {
-      if (err) return cb(err)
+    db.run(
+      sql,
+      data.username,
+      data.passwordHash,
+      data.city,
+      data.email,
+      data.favorite_brands ?? null,
+      function (err) {
+        if (err) return cb(err)
 
-      cb(null, {
-        id: this.lastID,
-        username: data.username,
-        email: data.email,
-        city: data.city,
-      })
-    })
+        cb(null, {
+          id: this.lastID,
+          username: data.username,
+          email: data.email,
+          city: data.city,
+          favorite_brands: data.favorite_brands ?? null,
+        })
+      },
+    )
   }
   static updateProfileById(userId, patch, cb) {
-    const allowed = ['username', 'city', 'description', 'profile_img', 'img_mimetype']
+    const allowed = [
+      'username',
+      'city',
+      'description',
+      'favorite_brands',
+      'profile_img',
+      'img_mimetype',
+    ]
 
     const entries = Object.entries(patch).filter(([k, v]) => allowed.includes(k) && v !== undefined)
 
@@ -147,7 +164,7 @@ class User {
   }
   static findPublicByUsername(username, cb) {
     const sql = `
-    SELECT id, username, city, description, img_mimetype
+    SELECT id, username, city, description, favorite_brands, img_mimetype
     FROM users
     WHERE username = ?
   `
@@ -159,6 +176,23 @@ class User {
     db.run(sql, userId, function (err) {
       if (err) return cb(err)
       cb(null, { updated: this.changes })
+    })
+  }
+  static searchUsernames(prefix, { limit = 10 } = {}, cb) {
+    const like = `${prefix}%`
+    const sql = `
+    SELECT username
+    FROM users
+    WHERE username LIKE ?
+    ORDER BY username ASC
+    LIMIT ?
+  `
+    db.all(sql, like, limit, (err, rows) => {
+      if (err) return cb(err)
+      cb(
+        null,
+        rows.map((r) => r.username),
+      )
     })
   }
   // static update(data, cb) {
