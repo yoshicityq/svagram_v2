@@ -2,9 +2,13 @@ import { apiFetch } from '@/api/apiFetch'
 import { defineStore } from 'pinia'
 
 type User = {
-  id: number | string
+  id: string | number
   username: string
-  email: string
+  city: string
+  description: string
+  hasAvatar: string
+  avatarUrl: string
+  favorite_brands: string
 }
 
 const useAuthStore = defineStore('auth', {
@@ -45,6 +49,7 @@ const useAuthStore = defineStore('auth', {
         const res = await apiFetch('/me')
         if (res.ok) {
           const data = (await res.json()) as { user: User }
+          console.log(data)
           this.user = data.user
         } else {
           this.clearSession()

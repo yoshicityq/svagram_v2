@@ -37,6 +37,7 @@ const props = defineProps({
   background-color: white;
   color: blueviolet;
   cursor: pointer;
+  transition: 0.4s all ease;
   &__primary {
     background-color: blueviolet;
     color: white;
@@ -57,7 +58,9 @@ const props = defineProps({
 .my-button:active {
   transform: scale(0.9);
   transition: 0.4s ease all;
-  box-shadow: 0px 0px 18px 18px rgba(134, 86, 231, 0.248);
   background-color: rgba(230, 230, 230, 0.566);
+}
+.my-button__primary:hover {
+  box-shadow: 0px 0px 20px 5px rgba(134, 86, 231, 0.645);
 }
 </style>

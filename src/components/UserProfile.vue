@@ -1,12 +1,12 @@
 <template>
   <div class="user-profile">
     <div class="user-info">
-      <div
-        class="user-img"
+      <MyAvatar
+        :username="username"
+        size="small"
         @click="router.push({ name: 'Profile', params: { username: username } })"
-      >
-        <img :src="userAvatar" class="avatar" />
-      </div>
+        class="user-info_avatar"
+      />
       <span
         v-show="isClosable"
         class="user-nickname"
@@ -18,12 +18,11 @@
 </template>
 
 <script setup lang="ts">
-import useAuthStore from '@/stores/auth'
 import useSidebarStore from '@/stores/sidebar'
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import Avatar from '@/assets/images/no_avatar.png'
-import { getProfileImg } from '@/api/apiData'
+
+import MyAvatar from './MyAvatar.vue'
 
 const props = defineProps({
   username: {
@@ -39,18 +38,8 @@ const isClosable = computed(() => {
   return props.closable ? (sidebarStore.isOpen ? true : false) : true
 })
 const sidebarStore = useSidebarStore()
-const authStore = useAuthStore()
 
 const router = useRouter()
-
-const previewUrl = ref<string | null>(null)
-const userAvatar = computed(() => {
-  return String(previewUrl.value ? previewUrl.value : Avatar)
-})
-
-onMounted(async () => {
-  previewUrl.value = await getProfileImg(localStorage.getItem('user')!)
-})
 </script>
 
 <style scoped lang="scss">
@@ -63,9 +52,12 @@ onMounted(async () => {
 .user-info {
   display: flex;
   align-items: center;
-
   gap: 10px;
+  &_avatar {
+    cursor: pointer;
+  }
 }
+
 .user-img {
   width: 40px;
   height: 40px;
@@ -75,14 +67,7 @@ onMounted(async () => {
   overflow: hidden;
   position: relative;
 }
-.avatar {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  right: 0;
-  bottom: 0;
-  top: 5px;
-}
+
 .user-nickname {
   cursor: pointer;
   font-weight: 600;

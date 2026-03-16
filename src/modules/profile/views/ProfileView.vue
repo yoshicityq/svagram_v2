@@ -2,9 +2,7 @@
   <div class="profile-view">
     <div class="header">
       <div class="user-info-block">
-        <div class="user-img">
-          <img class="avatar" :src="userAvatar" alt="" />
-        </div>
+        <MyAvatar :username="username" size="large" />
         <div class="user-info">
           <span class="username">{{ username }}</span>
           <span>{{ postsQuantity }} posts</span>
@@ -39,6 +37,7 @@ import CreatePostDialog from '../components/CreatePostDialog.vue'
 import OpenPostDialog from '../components/OpenPostDialog.vue'
 import noAvatar from '@/assets/images/no_avatar.png'
 import BrandSelect from '@/components/BrandSelect.vue'
+import MyAvatar from '@/components/MyAvatar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -54,19 +53,7 @@ type User = {
   favorite_brands: string
 }
 const userData = ref<User>()
-let selectedBrand = ref('')
-const previewAvatar = ref<string | null>(null)
 
-const userAvatar = computed(() => {
-  if (!previewAvatar.value) {
-    if (userData.value?.hasAvatar) {
-      return `http://localhost:3000${userData.value.avatarUrl}`
-    }
-    return noAvatar
-  }
-
-  return previewAvatar.value
-})
 watch(
   () => userData.value,
   async () => {
@@ -105,22 +92,8 @@ watch(
   { immediate: true },
 )
 
-async function getProfileImg() {
-  const res = await apiFetch(`/users/${username}/avatar`)
-
-  if (!res.ok) {
-    previewAvatar.value = null
-  } else {
-    const blob = await res.blob()
-    previewAvatar.value = URL.createObjectURL(blob)
-    console.log(previewAvatar.value)
-  }
-}
 onMounted(() => {
   getProfileData()
-})
-onBeforeMount(async () => {
-  await getProfileImg()
 })
 </script>
 
@@ -144,26 +117,7 @@ onBeforeMount(async () => {
   gap: 20px;
   align-items: flex-end;
 }
-.user-img {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  background-color: blueviolet;
-  overflow: hidden;
-  position: relative;
-  object-fit: contain;
-}
-.avatar {
-  object-fit: cover;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  position: absolute;
-  top: 20px;
-  left: 2px;
-  right: 0;
-  bottom: 0;
-}
+
 .user-info {
   display: flex;
   flex-direction: column;

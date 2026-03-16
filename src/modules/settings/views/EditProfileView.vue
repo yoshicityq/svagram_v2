@@ -11,6 +11,7 @@
             <img class="avatar-img" :src="userAvatar" :class="{ preview: previewAvatar }" alt="" />
           </label>
 
+          <!-- <MyAvatar :username="userData?.username!" :size="`large`" /> -->
           <input
             ref="fileInput"
             type="file"
@@ -83,6 +84,7 @@ import { computed, onBeforeMount, ref, useTemplateRef, watch } from 'vue'
 import noAvatar from '@/assets/images/no_avatar.png'
 import useAuthStore from '@/stores/auth'
 import { apiFetch } from '@/api/apiFetch'
+import MyAvatar from '@/components/MyAvatar.vue'
 
 type User = {
   id: string | number
@@ -238,6 +240,7 @@ async function sendData() {
     alert(data.message || 'Update failed')
   }
 
+  await getProfileData()
   await getProfileImg()
 }
 
@@ -328,6 +331,7 @@ onBeforeMount(async () => {
   margin-top: 20px;
   border: 1px solid blueviolet;
   width: 100%;
+  max-width: 400px;
   padding: 15px;
   border-radius: 7px;
   gap: 10px;
@@ -377,6 +381,8 @@ onBeforeMount(async () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
+  max-width: 200px;
 }
 
 .brand-row {

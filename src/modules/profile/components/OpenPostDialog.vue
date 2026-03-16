@@ -127,7 +127,7 @@ watch(
   z-index: 20;
 }
 .post {
-  width: 80%;
+  width: fit-content;
   height: 80%;
   background-color: #fff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
