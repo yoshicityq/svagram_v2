@@ -1,3 +1,4 @@
+import type { Post, PostLikes, PostRating } from '@/types/post'
 import { defineStore } from 'pinia'
 
 const useModalStore = defineStore('modalStore', {
@@ -5,6 +6,8 @@ const useModalStore = defineStore('modalStore', {
     isCreateDialogOpen: false,
     isPostDialogOpen: false,
     openedPostId: null as number | string | null,
+    openedPostRating: null as PostRating | null,
+    openedPostLikes: null as PostLikes | null,
   }),
   getters: {},
   actions: {

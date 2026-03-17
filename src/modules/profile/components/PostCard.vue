@@ -17,22 +17,10 @@
 <script setup lang="ts">
 import EstimatePost from '@/components/EstimatePost.vue'
 import useModalStore from '@/stores/modals'
+import type { Post } from '@/types/post'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-type Post = {
-  id: number
-  user: string
-  description: string
-  img: string
-  img_mimetype: string
-  brand_h: string
-  brand_tt: string
-  brand_t: string
-  brand_b: string
-  brand_s: string
-  imageUrl: string
-}
 const modalStore = useModalStore()
 const props = defineProps({
   post: {

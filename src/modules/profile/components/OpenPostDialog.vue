@@ -9,7 +9,6 @@
           <div class="info-header">
             <div class="info-user">
               <UserProfile :username="username" />
-              <!-- <PostRatingPopover :post-id="postId" /> -->
             </div>
             <EstimatePost v-if="postId" :post-id="postId" />
           </div>
@@ -49,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import { getPostLikes, getPostRating } from '@/api/apiData'
 import { apiFetch } from '@/api/apiFetch'
 import ChevronIcon from '@/assets/icons/ChevronIcon.vue'
 import CommentsIcon from '@/assets/icons/CommentsIcon.vue'
@@ -59,50 +59,46 @@ import EstimatePost from '@/components/EstimatePost.vue'
 import PostRatingPopover from '@/components/PostRatingPopover.vue'
 import UserProfile from '@/components/UserProfile.vue'
 import useModalStore from '@/stores/modals'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import type { Post, PostLikes } from '@/types/post'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-type Post = {
-  id: string | number
-  user: string
-  description: string
-  likes: string
-  people_liked: string | number
-  brand_h: string
-  brand_tt: string
-  brand_t: string
-  brand_b: string
-  brand_s: string
-  img_mimetype: string
-  imageUrl: string
-}
-const post = ref<Post | null>()
-const username = ref<string>('')
 const modalStore = useModalStore()
+
+const post = ref<Post | null>(null)
+const username = ref<string>('')
 const postId = computed(() => modalStore.openedPostId as number)
+
 async function getPost() {
   const response = await apiFetch(`/posts/${postId.value}`)
-  if (response.ok) {
-    const data = await response.json()
+  const data = await response.json()
+
+  const ratingData = await getPostRating(postId.value)
+  const likesData = await getPostLikes(postId.value)
+  if (data && ratingData && likesData) {
+    username.value = data.post.user
     post.value = data.post
-    if (post.value) {
-      username.value = post.value.user
-    }
+
+    modalStore.openedPostRating = ratingData
+    modalStore.openedPostLikes = likesData
   }
 }
 
 const route = useRoute()
 const router = useRouter()
+
 function closeDialog() {
   modalStore.togglePostDialog()
   modalStore.openedPostId = null
   const { post, ...rest } = route.query
   router.push({ query: rest })
 }
+
 const isBrandsVisible = ref(false)
 function toggleBrands() {
   isBrandsVisible.value = !isBrandsVisible.value
 }
+
 watch(
   () => postId.value,
   async () => {
@@ -113,6 +109,8 @@ watch(
   },
   { immediate: true },
 )
+
+onBeforeUnmount(() => {})
 </script>
 
 <style scoped lang="scss">

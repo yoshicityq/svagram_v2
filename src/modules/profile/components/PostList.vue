@@ -5,44 +5,32 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import PostCard from './PostCard.vue'
 import { apiFetch } from '@/api/apiFetch'
-
-type Post = {
-  id: number
-  user: string
-  description: string
-  img: string
-  img_mimetype: string
-  likes: number
-  people_liked: string
-  brand_h: string
-  brand_tt: string
-  brand_t: string
-  brand_b: string
-  brand_s: string
-  imageUrl: string
-}
+import type { Post } from '@/types/post'
+import { getUserPosts } from '@/api/apiData'
 
 const props = defineProps({
-  user: {
+  username: {
     type: String,
     required: true,
   },
 })
-const emits = defineEmits(['postsQuantity'])
-const posts = ref<Array<Post>>([])
 
-async function getPosts() {
-  const response = await apiFetch(`/users/${props.user}/posts`)
-  const data = await response.json()
-  posts.value = data.posts
-  emits('postsQuantity', posts.value.length)
-}
-onMounted(() => {
-  getPosts()
-})
+const emits = defineEmits(['postsQuantity'])
+const posts = ref<Array<Post> | null>([])
+
+watch(
+  () => props.username,
+  async (newVal) => {
+    if (newVal) {
+      posts.value = await getUserPosts(newVal)
+      if (posts.value) emits('postsQuantity', posts.value.length)
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped lang="scss">

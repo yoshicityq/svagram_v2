@@ -4,17 +4,18 @@ import { defineStore } from 'pinia'
 type User = {
   id: string | number
   username: string
-  city: string
-  description: string
-  hasAvatar: string
-  avatarUrl: string
-  favorite_brands: string
+  email: string
+}
+type UserAvatar = {
+  hasAvatar: boolean
+  avatarUrl: string | null
 }
 
 const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: null as string | null,
     user: null as User | null,
+    avatarData: null as UserAvatar | null,
     isReady: false,
   }),
   getters: {
@@ -49,7 +50,6 @@ const useAuthStore = defineStore('auth', {
         const res = await apiFetch('/me')
         if (res.ok) {
           const data = (await res.json()) as { user: User }
-          console.log(data)
           this.user = data.user
         } else {
           this.clearSession()

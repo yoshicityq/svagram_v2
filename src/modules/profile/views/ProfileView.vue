@@ -13,13 +13,13 @@
           >
         </div>
       </div>
-      <div class="actions-block">
+      <div v-if="authStore.user?.username === username" class="actions-block">
         <MyButton @click="modalStore.toggleCreateDialog()">Create Post</MyButton>
         <MyButton @click="router.push({ name: 'edit' })">Edit Profile</MyButton>
       </div>
     </div>
     <div class="body">
-      <PostList :user="username" @posts-quantity="getLength" />
+      <PostList :username="username" @posts-quantity="getLength" />
     </div>
   </div>
   <CreatePostDialog />
@@ -38,45 +38,26 @@ import OpenPostDialog from '../components/OpenPostDialog.vue'
 import noAvatar from '@/assets/images/no_avatar.png'
 import BrandSelect from '@/components/BrandSelect.vue'
 import MyAvatar from '@/components/MyAvatar.vue'
-
-const route = useRoute()
-const router = useRouter()
-const username = route.params.username as string
-
-type User = {
-  id: string | number
-  username: string
-  city: string
-  description: string
-  hasAvatar: string
-  avatarUrl: string
-  favorite_brands: string
-}
-const userData = ref<User>()
-
-watch(
-  () => userData.value,
-  async () => {
-    if (!userData.value) {
-      await getProfileData()
-    }
-  },
-  { immediate: true },
-)
+import { getProfileData } from '@/api/apiData'
+import type { User } from '@/types/user'
+import useAuthStore from '@/stores/auth'
 
 const modalStore = useModalStore()
-async function getProfileData() {
-  const response = await apiFetch(`/users/${username}`)
-  const data = await response.json()
-  userData.value = data.user
-}
+const authStore = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+const username = ref(route.params.username as string)
+
+const userData = ref<User | null>()
+
 const postsQuantity = ref(0)
 const getLength = (data: number) => (postsQuantity.value = data)
+
 watch(
   () => route.query.post,
-  (post) => {
-    if (post) {
-      const id = Number(post)
+  (newPost) => {
+    if (newPost) {
+      const id = Number(newPost)
       if (Number.isFinite(id)) {
         modalStore.openedPostId = id
         modalStore.isPostDialogOpen = true
@@ -91,10 +72,14 @@ watch(
   },
   { immediate: true },
 )
-
-onMounted(() => {
-  getProfileData()
-})
+watch(
+  () => route.params.username,
+  async (newVal) => {
+    userData.value = await getProfileData(newVal as string)
+    username.value = newVal as string
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped lang="scss">

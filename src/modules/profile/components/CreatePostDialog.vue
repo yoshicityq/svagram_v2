@@ -25,27 +25,22 @@
             <div class="photo-brands">
               <div class="brand-select">
                 <span>Hat</span>
-                <!-- <SelectBrand v-model="brand_h" name="brand_h" /> -->
                 <BrandSelect v-model="brand_h" name="brand_h" />
               </div>
               <div class="brand-select">
                 <span>Jacket</span>
-                <!-- <SelectBrand v-model="brand_tt" name="brand_tt" /> -->
                 <BrandSelect v-model="brand_tt" name="brand_tt" />
               </div>
               <div class="brand-select">
                 <span>Top</span>
-                <!-- <SelectBrand v-model="brand_t" name="brand_t" /> -->
                 <BrandSelect v-model="brand_t" name="brand_t" />
               </div>
               <div class="brand-select">
                 <span>Bottom</span>
-                <!-- <SelectBrand v-model="brand_b" name="brand_b" /> -->
                 <BrandSelect v-model="brand_b" name="brand_b" />
               </div>
               <div class="brand-select">
                 <span>Shoes</span>
-                <!-- <SelectBrand v-model="brand_s" name="brand_s" /> -->
                 <BrandSelect v-model="brand_s" name="brand_s" />
               </div>
             </div>
@@ -123,7 +118,7 @@ async function publishPost() {
     alert('Не удалось создать пост')
   }
 }
-// если закрыли модалку — чистим превью (опционально, но удобно)
+
 watch(
   () => modalStore.isCreateDialogOpen,
   (open) => {

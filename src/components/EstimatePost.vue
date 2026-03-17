@@ -17,7 +17,6 @@
           class="icon"
           :is-rated="myRating ? true : false"
         />
-        <!-- <span>{{ rating }}</span> -->
         <span>{{ avgRating.toFixed(2) }}</span>
         <span v-show="isClickable">({{ ratingsCount }})</span>
       </div>
@@ -27,16 +26,15 @@
     </div>
   </div>
 </template>
-w
 
 <script setup lang="ts">
 import { apiFetch } from '@/api/apiFetch'
 import LikesIcon from '@/assets/icons/LikesIcon.vue'
 import RatingIcon from '@/assets/icons/RatingIcon.vue'
 import { ref, watch } from 'vue'
-
-// ✅ ДОБАВИТЬ:
 import PostRatingPopover from '@/components/PostRatingPopover.vue'
+import { getPostLikes, getPostRating } from '@/api/apiData'
+import useModalStore from '@/stores/modals'
 
 const props = defineProps({
   postId: {
@@ -49,15 +47,14 @@ const props = defineProps({
   },
 })
 
+const modalStore = useModalStore()
 let likes = ref<number>(0)
-let rating = ref<number>(0)
 let isPostLikedByCurrentUser = ref<boolean>()
 
-// ✅ ДОБАВИТЬ: состояние попапа и мета рейтинга
-const isRatingOpen = ref(false)
-const avgRating = ref(0)
-const ratingsCount = ref(0)
-const myRating = ref<number | null>(null)
+const isRatingOpen = ref<boolean>(false)
+const avgRating = ref<number>(0)
+const ratingsCount = ref<number>(0)
+const myRating = ref<number | null>(0)
 
 function toggleRatingPopover() {
   if (!props.isClickable) return
@@ -71,68 +68,81 @@ function handleRate(value: number | null) {
   myRating.value = value
   closeRatingPopover()
 }
-// --- ваш код ниже НЕ ТРОГАЮ ---
 
 async function toggleLike(id: number) {
   const res = await apiFetch(`/posts/${id}/like`, { method: 'POST' })
   const data = await res.json()
   likes.value = data.likes
   isPostLikedByCurrentUser.value = data.liked
-}
-
-async function getPostLikes(id: number) {
-  const res = await apiFetch(`/posts/${id}/likes`)
-  const data = await res.json()
-  likes.value = data.likes
-  isPostLikedByCurrentUser.value = data.likedByMe
-}
-
-async function getPostRating(id: number) {
-  const res = await apiFetch(`/posts/${id}/rating`)
-  const data = await res.json()
-  console.log(data)
-
-  // ✅ ДОБАВИТЬ: обновляем мету, чтобы выводить в UI
-  avgRating.value = Number(data.avgRating ?? 0)
-  ratingsCount.value = Number(data.ratingsCount ?? 0)
-  myRating.value = data.myRating == null ? null : Number(data.myRating)
-
-  // если хотите показывать "avg" рядом с иконкой:
-  rating.value = avgRating.value
-}
-
-// ✅ ДОБАВИТЬ: выставление оценки из попапа (1..5)
-async function setRatingFromPopover(n: number) {
-  if (!props.isClickable) return
-  const res = await apiFetch(`/posts/${props.postId}/rating`, {
-    method: 'POST',
-    body: JSON.stringify({ rating: n }),
-  })
-  const data = await res.json()
-
-  avgRating.value = Number(data.avgRating ?? 0)
-  ratingsCount.value = Number(data.ratingsCount ?? 0)
-  myRating.value = data.myRating == null ? null : Number(data.myRating)
-  rating.value = avgRating.value
+  if (modalStore.openedPostLikes) {
+    modalStore.openedPostLikes.likes = data.likes
+    modalStore.openedPostLikes.likedByMe = data.liked
+  }
 }
 
 watch(
   () => props.postId,
-  async () => {
-    if (props.postId) {
-      await getPostLikes(props.postId)
-      await getPostRating(props.postId)
+  async (newVal) => {
+    if (newVal) {
+      const likesData = await getPostLikes(props.postId)
+      const ratingData = await getPostRating(props.postId)
+      console.log(likesData)
+      if (likesData) {
+        likes.value = likesData.likes
+        isPostLikedByCurrentUser.value = likesData.likedByMe
+      }
+      if (ratingData) {
+        avgRating.value = ratingData.avgRating
+        ratingsCount.value = ratingData.ratingsCount
+        myRating.value = ratingData.myRating
+      }
     }
   },
   { immediate: true },
 )
 watch(
   () => myRating.value,
-  async () => {
-    if (myRating.value) {
-      await getPostRating(props.postId)
+  async (newVal) => {
+    if (newVal) {
+      const ratingData = await getPostRating(props.postId)
+
+      if (ratingData) {
+        avgRating.value = ratingData.avgRating
+        ratingsCount.value = ratingData.ratingsCount
+        myRating.value = ratingData.myRating
+      }
     }
   },
+)
+watch(
+  () => modalStore.openedPostLikes,
+  (newVal) => {
+    if (newVal) {
+      if (modalStore.openedPostLikes) {
+        if (modalStore.openedPostId !== props.postId) return
+        if (modalStore.openedPostLikes.likes !== likes.value) {
+          likes.value = modalStore.openedPostLikes.likes
+          isPostLikedByCurrentUser.value = modalStore.openedPostLikes.likedByMe
+        }
+      }
+    }
+  },
+  { deep: true },
+)
+watch(
+  () => modalStore.openedPostRating,
+  () => {
+    if (modalStore.openedPostRating) {
+      if (modalStore.openedPostId !== props.postId) return
+
+      if (modalStore.openedPostRating.avgRating !== avgRating.value) {
+        avgRating.value = modalStore.openedPostRating.avgRating
+        myRating.value = modalStore.openedPostRating.myRating
+        ratingsCount.value = modalStore.openedPostRating.ratingsCount
+      }
+    }
+  },
+  { deep: true },
 )
 </script>
 

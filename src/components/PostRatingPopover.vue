@@ -1,9 +1,5 @@
 <template>
   <div class="rating-popover" @click.stop>
-    <!-- <div class="rating-head">
-      <span class="avg">Avg: {{ avgRating.toFixed(2) }}</span>
-      <span class="cnt">({{ ratingsCount }})</span>
-    </div> -->
     <div class="rating-head">
       <span v-if="myRating">Your rating: {{ myRating }}</span>
       <span v-else>Click a star to rate</span>
@@ -28,6 +24,7 @@
 
 <script setup lang="ts">
 import { apiFetch } from '@/api/apiFetch'
+import useModalStore from '@/stores/modals'
 import { ref, watch } from 'vue'
 
 const props = defineProps<{ postId: number }>()
@@ -39,6 +36,7 @@ const ratingsCount = ref(0)
 const myRating = ref<number | null>(null)
 const hovered = ref<number | null>(null)
 
+const modalStore = useModalStore()
 async function load() {
   loading.value = true
   try {
@@ -74,6 +72,12 @@ async function setRating(n: number) {
     avgRating.value = data.avgRating
     ratingsCount.value = data.ratingsCount
     myRating.value = data.myRating
+    if (modalStore.openedPostRating) {
+      modalStore.openedPostRating.myRating = myRating.value
+      modalStore.openedPostRating.ratingsCount = ratingsCount.value
+      modalStore.openedPostRating.avgRating = avgRating.value
+    }
+
     emits('selected', myRating.value)
   } finally {
     loading.value = false
