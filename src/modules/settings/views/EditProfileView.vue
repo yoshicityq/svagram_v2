@@ -10,8 +10,6 @@
           <label class="avatar" for="file">
             <img class="avatar-img" :src="userAvatar" :class="{ preview: previewAvatar }" alt="" />
           </label>
-
-          <!-- <MyAvatar :username="userData?.username!" :size="`large`" /> -->
           <input
             ref="fileInput"
             type="file"
@@ -80,21 +78,13 @@ import BrandSelect from '@/components/BrandSelect.vue'
 import CitySelect from '@/components/CitySelect.vue'
 import MyButton from '@/components/UI/MyButton.vue'
 import MyInput from '@/components/UI/MyInput.vue'
-import { computed, onBeforeMount, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import noAvatar from '@/assets/images/no_avatar.png'
 import useAuthStore from '@/stores/auth'
 import { apiFetch } from '@/api/apiFetch'
 import MyAvatar from '@/components/MyAvatar.vue'
-
-type User = {
-  id: string | number
-  username: string
-  city: string
-  description: string
-  hasAvatar: boolean
-  avatarUrl: string
-  favorite_brands: string
-}
+import type { User } from '@/types/user'
+import { getProfileData, getProfileImg } from '@/api/apiData'
 
 const authStore = useAuthStore()
 const userData = ref<User | null>(null)
@@ -117,44 +107,6 @@ const userAvatar = computed(() => {
 
   return previewAvatar.value
 })
-
-watch(
-  () => userData.value,
-  async () => {
-    if (!userData.value) {
-      await getProfileData()
-    }
-  },
-  { immediate: true },
-)
-
-async function getProfileData() {
-  const response = await apiFetch(`/users/${authStore.user?.username}`)
-  const data = await response.json()
-  userData.value = data.user
-
-  if (userData.value) {
-    description.value = userData.value.description ?? ''
-    chosenCity.value = userData.value.city ?? ''
-
-    favoriteBrands.value = userData.value.favorite_brands.split(', ')
-  }
-
-  console.log(userData.value)
-}
-
-async function getProfileImg() {
-  const res = await apiFetch(`/users/${authStore.user?.username}/avatar`)
-
-  if (!res.ok) {
-    previewAvatar.value = null
-  } else {
-    const blob = await res.blob()
-    cleanupPreview()
-    previewAvatar.value = URL.createObjectURL(blob)
-    console.log(previewAvatar.value)
-  }
-}
 
 function openFileDialog() {
   fileInput.value?.click()
@@ -229,24 +181,35 @@ async function sendData() {
     body: formData,
   })
 
-  const data = await response.json()
-  console.log(data)
-
   if (response.ok) {
-    userData.value = data.user
-    selectedFile.value = null
-    cleanupPreview()
-  } else {
-    alert(data.message || 'Update failed')
-  }
+    alert('Данные обновились успешно')
+    userData.value = await getProfileData(authStore.user?.username as string)
+    previewAvatar.value = await getProfileImg(authStore.user?.username as string)
 
-  await getProfileData()
-  await getProfileImg()
+    if (userData.value) {
+      description.value = userData.value.description ?? ''
+      chosenCity.value = userData.value.city ?? ''
+      favoriteBrands.value = userData.value.favorite_brands.split(', ')
+    }
+  }
 }
 
-onBeforeMount(async () => {
-  await getProfileImg()
-})
+watch(
+  () => userData.value,
+  async () => {
+    if (!userData.value) {
+      userData.value = await getProfileData(authStore.user?.username as string)
+      previewAvatar.value = await getProfileImg(authStore.user?.username as string)
+
+      if (userData.value) {
+        description.value = userData.value.description ?? ''
+        chosenCity.value = userData.value.city ?? ''
+        favoriteBrands.value = userData.value.favorite_brands.split(', ')
+      }
+    }
+  },
+  { immediate: true, deep: true },
+)
 </script>
 
 <style scoped lang="scss">

@@ -4,8 +4,8 @@
       <span class="header-title">System Settings</span>
     </div>
     <div class="body">
-      <div class="option">
-        <span>Localization</span>
+      <div class="localization">
+        <span>Language</span>
         <span>Option</span>
       </div>
       <div class="option">
@@ -56,5 +56,17 @@
   padding: 10px;
   border: 1px solid black;
   border-radius: 5px;
+}
+
+.localization {
+  width: 300px;
+  height: 150px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border: 2px solid blueviolet;
+  background-color: rgba(137, 43, 226, 0.168);
+  border-radius: 10px;
 }
 </style>
