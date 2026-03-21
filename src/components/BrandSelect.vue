@@ -95,7 +95,7 @@ const searchBrands = computed(() => {
   return clothingBrands
 })
 
-function handleClickOutside(event: MouseEvent) {
+function handleClickOutside1(event: MouseEvent) {
   const target = event.target as Node
 
   if (brandSelectRef.value && !brandSelectRef.value.contains(target)) {
@@ -104,11 +104,11 @@ function handleClickOutside(event: MouseEvent) {
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
+  document.addEventListener('click', handleClickOutside1)
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('click', handleClickOutside1)
 })
 
 const clothingBrands = [

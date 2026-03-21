@@ -364,11 +364,14 @@ app.post('/posts/create', authRequired, upload.single('image'), (req, res, next)
     const city = req.body.city ?? null
 
     // (если вы будете передавать бренды — берём из body, иначе ставим дефолты)
-    const brand_h = req.body.brand_h ?? ''
-    const brand_tt = req.body.brand_tt ?? ''
-    const brand_t = req.body.brand_t ?? ''
-    const brand_b = req.body.brand_b ?? ''
-    const brand_s = req.body.brand_s ?? ''
+    const brand_accessory = req.body.brand_accessory ?? ''
+    const brand_hat = req.body.brand_hat ?? ''
+    const brand_outwear = req.body.brand_outwear ?? ''
+    const brand_top = req.body.brand_top ?? ''
+    const brand_bottom = req.body.brand_bottom ?? ''
+    const brand_shoes = req.body.brand_shoes ?? ''
+    const brand_bag = req.body.brand_bag ?? ''
+    const brand_glasses = req.body.brand_glasses ?? ''
 
     // 3) автор берётся из JWT (вы так и делали в /me)
     const username = req.user.username
@@ -379,11 +382,14 @@ app.post('/posts/create', authRequired, upload.single('image'), (req, res, next)
         description,
         img: req.file.buffer, // BLOB
         img_mimetype: req.file.mimetype,
-        brand_h,
-        brand_tt,
-        brand_t,
-        brand_b,
-        brand_s,
+        brand_accessory,
+        brand_hat,
+        brand_outwear,
+        brand_top,
+        brand_bottom,
+        brand_shoes,
+        brand_bag,
+        brand_glasses,
       },
       (err, created) => {
         if (err) return next(err)

@@ -5,17 +5,21 @@
         <MyAvatar :username="username" size="large" />
         <div class="user-info">
           <span class="username">{{ username }}</span>
-          <span>{{ postsQuantity }} posts</span>
-          <span v-if="userData?.city">City: {{ userData?.city }}</span>
-          <span v-if="userData?.description">Description: {{ userData?.description }}</span>
+          <span>{{ postsQuantity }} {{ $t('profilePage.posts_count') }}</span>
+          <span v-if="userData?.city">{{ $t('profilePage.city') }}: {{ userData?.city }}</span>
+          <span v-if="userData?.description"
+            >{{ $t('profilePage.description') }}: {{ userData?.description }}</span
+          >
           <span v-if="userData?.favorite_brands"
-            >Favorite brands: {{ userData.favorite_brands }}</span
+            >{{ $t('profilePage.fav_brands') }}: {{ userData.favorite_brands }}</span
           >
         </div>
       </div>
       <div v-if="authStore.user?.username === username" class="actions-block">
-        <MyButton @click="modalStore.toggleCreateDialog()">Create Post</MyButton>
-        <MyButton @click="router.push({ name: 'edit' })">Edit Profile</MyButton>
+        <MyButton @click="modalStore.toggleCreateDialog()">{{
+          $t('buttons.create_post')
+        }}</MyButton>
+        <MyButton @click="router.push({ name: 'edit' })">{{ $t('buttons.edit_profile') }}</MyButton>
       </div>
     </div>
     <div class="body">
