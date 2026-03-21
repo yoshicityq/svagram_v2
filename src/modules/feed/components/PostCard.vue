@@ -47,22 +47,7 @@ import ShoesIcon from '@/assets/icons/ShoesIcon.vue'
 import TshirtIcon from '@/assets/icons/TshirtIcon.vue'
 import EstimatePost from '@/components/EstimatePost.vue'
 import UserProfile from '@/components/UserProfile.vue'
-
-type Post = {
-  id: number
-  user: string
-  description: string
-  img: string
-  img_mimetype: string
-  likes: number
-  people_liked: string
-  brand_h: string
-  brand_tt: string
-  brand_t: string
-  brand_b: string
-  brand_s: string
-  imageUrl: string
-}
+import type { Post } from '@/types/post'
 
 const props = defineProps({
   post: {

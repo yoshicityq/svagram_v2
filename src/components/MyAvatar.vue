@@ -36,8 +36,6 @@ watch(
   async (newVal) => {
     if (newVal) {
       avatarUrl.value = await getProfileImg(newVal)
-      // if (avatarData === null) avatarUrl.value = null
-      // else avatarUrl.value = avatarData
     }
   },
   { immediate: true },
