@@ -1,30 +1,32 @@
 <template>
   <div class="system-view">
     <div class="header">
-      <span class="header-title">System Settings</span>
+      <span class="header-title">{{ $t('systemSettings.page_title') }}</span>
     </div>
     <div class="body">
       <div class="localization">
-        <span>Language</span>
-        <span>Option</span>
+        <span>{{ $t('systemSettings.language') }}</span>
+        <LanguageSelect />
       </div>
       <div class="option">
-        <span>Theme</span>
+        <span>{{ $t('systemSettings.theme') }}</span>
         <span>Option</span>
       </div>
-      <div class="option">
+      <!-- <div class="option">
         <span>Notifications</span>
         <span>Option</span>
       </div>
       <div class="option">
         <span>Text size</span>
         <span>Option</span>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import LanguageSelect from '@/components/LanguageSelect.vue'
+</script>
 
 <style scoped lang="scss">
 .system-view {

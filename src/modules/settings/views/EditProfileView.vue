@@ -1,7 +1,7 @@
 <template>
   <div class="edit-view">
     <div class="header">
-      <span class="header-title">Edit Profile</span>
+      <span class="header-title">{{ $t('editProfile.page_title') }}</span>
     </div>
 
     <div class="body">
@@ -21,26 +21,26 @@
           />
 
           <div class="btns">
-            <MyButton @click.prevent="openFileDialog">Upload new avatar</MyButton>
-            <MyButton>Choose from posts</MyButton>
-            <MyButton @click.prevent="deleteAvatar">Delete avatar</MyButton>
+            <MyButton @click.prevent="openFileDialog">{{ $t('buttons.upload_avatar') }}</MyButton>
+            <MyButton>{{ $t('buttons.choose_from_posts') }}</MyButton>
+            <MyButton @click.prevent="deleteAvatar">{{ $t('buttons.delete_avatar') }}</MyButton>
           </div>
         </div>
 
         <div class="userdata">
           <div class="stat">
-            <span class="stat-name">Username</span>
+            <span class="stat-name">{{ $t('editProfile.username') }}</span>
             <div class="stat-value">
               <MyInput :placeholder="userData?.username!" style="width: 100%" />
             </div>
           </div>
 
           <div class="stat">
-            <span class="stat-name">Description</span>
+            <span class="stat-name">{{ $t('editProfile.description') }}</span>
             <textarea
               name="description"
               v-model="description"
-              :placeholder="description ? '' : 'Tell smth about yourself'"
+              :placeholder="description ? '' : $t('placeholder.profile_description')"
               class="description-text"
             ></textarea>
           </div>
@@ -51,7 +51,7 @@
           </div>
 
           <div class="stat">
-            <span class="stat-name">Favorite brands</span>
+            <span class="stat-name">{{ $t('editProfile.fav_brands') }}</span>
 
             <div class="add-brand">
               <div v-for="(brand, index) in favoriteBrands" :key="index" class="brand-row">
@@ -67,7 +67,9 @@
           </div>
         </div>
 
-        <MyButton color="primary" class="submit_btn" @click="sendData">Save</MyButton>
+        <MyButton color="primary" class="submit_btn" @click="sendData">{{
+          $t('buttons.save')
+        }}</MyButton>
       </form>
     </div>
   </div>

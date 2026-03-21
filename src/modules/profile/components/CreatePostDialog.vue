@@ -1,53 +1,42 @@
 <template>
   <Teleport to="#portal">
-    <div
-      v-show="modalStore.isCreateDialogOpen"
-      class="dialog-wrapper"
-      @click="modalStore.toggleCreateDialog"
-    >
-      <form ref="form" @click.stop @submit.prevent="publishPost" class="post-dialog">
+    <div v-show="modalStore.isCreateDialogOpen" class="dialog-wrapper">
+      <form ref="form" @submit.prevent="publishPost" class="post-dialog">
         <div class="header">
-          <span>Create new post</span>
+          <span>{{ $t('modals.create_new_post') }}</span>
+          <CrossIcon class="icon" @click="closeWindow" />
         </div>
         <div class="body">
           <div class="photo-download">
             <label for="file">
               <img v-if="previewUrl" :src="previewUrl" alt="preview" />
-              <span v-else>Click to upload photo</span>
+              <span v-else>{{ $t('modals.upload_photo') }}</span>
             </label>
 
             <input id="file" type="file" accept="image/*" name="image" @change="onFileChange" />
           </div>
           <div>
             <div class="photo-description">
-              <textarea name="description" placeholder="Write a caption..."></textarea>
+              <textarea
+                name="description"
+                :placeholder="$t('placeholder.photo_capture')"
+              ></textarea>
             </div>
-            <div class="photo-brands">
-              <div class="brand-select">
-                <span>Hat</span>
-                <BrandSelect v-model="brand_h" name="brand_h" />
+            <div class="add_brands">
+              <div v-for="(brand, index) in addedBrands" :key="index" class="block-row">
+                <CategoryBrandBlock
+                  :category-obj="brand"
+                  @update:category-name="updateCategoryName(index, $event)"
+                  @update:category-val="updateCategoryBrand(index, $event)"
+                />
+                <MyButton @click.prevent="removeBlock(index)"> - </MyButton>
               </div>
-              <div class="brand-select">
-                <span>Jacket</span>
-                <BrandSelect v-model="brand_tt" name="brand_tt" />
-              </div>
-              <div class="brand-select">
-                <span>Top</span>
-                <BrandSelect v-model="brand_t" name="brand_t" />
-              </div>
-              <div class="brand-select">
-                <span>Bottom</span>
-                <BrandSelect v-model="brand_b" name="brand_b" />
-              </div>
-              <div class="brand-select">
-                <span>Shoes</span>
-                <BrandSelect v-model="brand_s" name="brand_s" />
-              </div>
+              <MyButton type="button" @click="addBlock">{{ $t('buttons.add_brand') }}</MyButton>
             </div>
           </div>
         </div>
         <div class="footer">
-          <MyButton type="submit">Share</MyButton>
+          <MyButton type="submit">{{ $t('buttons.share') }}</MyButton>
         </div>
       </form>
     </div>
@@ -55,22 +44,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount, watch, useTemplateRef } from 'vue'
+import { ref, onBeforeUnmount, watch, useTemplateRef, reactive } from 'vue'
 import MyButton from '@/components/UI/MyButton.vue'
 import useModalStore from '@/stores/modals'
 import SelectBrand from './SelectBrand.vue'
 import { apiFetch } from '@/api/apiFetch'
-import BrandSelect from '@/components/BrandSelect.vue'
+import CategoryBrandBlock from './CategoryBrandBlock.vue'
+import type { BrandCategory } from '@/types/category'
+import CrossIcon from '@/assets/icons/CrossIcon.vue'
+
 const modalStore = useModalStore()
+
+const categoryObj_default: BrandCategory = {
+  id: null,
+  categoryName: '',
+  categoryValue: '',
+}
 
 const previewUrl = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
 
-const brand_tt = ref<string>('')
-const brand_t = ref<string>('')
-const brand_b = ref<string>('')
-const brand_s = ref<string>('')
-const brand_h = ref<string>('')
+let addedBrands = reactive<Array<BrandCategory>>([])
+function addBlock() {
+  let categoryObj = structuredClone(categoryObj_default)
+  if (!addedBrands.length) categoryObj.id = 1
+  else categoryObj.id = addedBrands.length + 1
+  addedBrands.push(categoryObj)
+}
+function updateCategoryName(index: number, val: string) {
+  if (addedBrands.length && addedBrands[index]) {
+    addedBrands[index].categoryName = val
+  }
+}
+function updateCategoryBrand(index: number, val: string) {
+  if (addedBrands.length && addedBrands[index]) {
+    addedBrands[index].categoryValue = val
+  }
+}
+function removeBlock(index: number) {
+  addedBrands.splice(index, 1)
+}
 
 function cleanupPreview() {
   if (previewUrl.value) {
@@ -102,11 +115,10 @@ async function publishPost() {
   }
 
   const formData = new FormData(form.value as HTMLFormElement)
-  formData.set('brand_h', brand_h.value)
-  formData.set('brand_tt', brand_tt.value)
-  formData.set('brand_t', brand_t.value)
-  formData.set('brand_b', brand_b.value)
-  formData.set('brand_s', brand_s.value)
+
+  addedBrands.forEach((item) => {
+    formData.set(item.categoryName, item.categoryValue)
+  })
 
   const response = await apiFetch('/posts/create', {
     method: 'POST',
@@ -118,7 +130,10 @@ async function publishPost() {
     alert('Не удалось создать пост')
   }
 }
-
+function closeWindow() {
+  modalStore.toggleCreateDialog()
+  addedBrands.splice(0, addedBrands.length)
+}
 watch(
   () => modalStore.isCreateDialogOpen,
   (open) => {
@@ -163,9 +178,19 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid blueviolet;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   font-size: 20px;
   font-weight: 500;
+
+  span {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .icon {
+    cursor: pointer;
+    width: 15px;
+  }
 }
 .body {
   flex: 1;
@@ -253,5 +278,13 @@ onBeforeUnmount(() => {
       font-weight: 500;
     }
   }
+}
+.add_brands {
+  width: 100%;
+}
+.block-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 </style>

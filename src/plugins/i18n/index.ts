@@ -6,6 +6,6 @@ export const i18n = createI18n({
   mode: 'composition',
   useScope: 'global',
   globalInjection: true,
-  fallbackLocale: 'ru', // set fallback locale
+  fallbackLocale: 'en', // set fallback locale
   messages, // set locale messages
 })

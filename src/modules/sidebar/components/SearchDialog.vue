@@ -1,7 +1,7 @@
 <template>
   <div v-if="sidebarStore.isSearchActive" class="search">
     <div class="input-wrapper">
-      <MyInput placeholder="Search..." class="input" v-model="inputVal" />
+      <MyInput :placeholder="$t('placeholder.search')" class="input" v-model="inputVal" />
       <CrossIcon class="icon" @click="sidebarStore.toggleSearch" />
     </div>
     <div v-show="isUsersFound" class="found_users">

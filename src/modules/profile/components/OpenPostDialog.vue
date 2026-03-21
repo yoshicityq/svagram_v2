@@ -72,7 +72,6 @@ const postId = computed(() => modalStore.openedPostId as number)
 async function getPost() {
   const response = await apiFetch(`/posts/${postId.value}`)
   const data = await response.json()
-
   const ratingData = await getPostRating(postId.value)
   const likesData = await getPostLikes(postId.value)
   if (data && ratingData && likesData) {
@@ -109,8 +108,6 @@ watch(
   },
   { immediate: true },
 )
-
-onBeforeUnmount(() => {})
 </script>
 
 <style scoped lang="scss">

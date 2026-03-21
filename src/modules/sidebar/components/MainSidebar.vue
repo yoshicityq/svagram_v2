@@ -11,21 +11,21 @@
           :icon="SearchIcon"
           color="primary"
           @click="sidebarStore.toggleSearch"
-          >Search</MyButton
+          >{{ $t('buttons.search') }}</MyButton
         >
         <MyButton
           :is-sidebar-opened="sidebarStore.isOpen"
           :icon="FeedIcon"
           @click="router.push('/feed')"
           color="primary"
-          >Feed</MyButton
+          >{{ $t('buttons.feed') }}</MyButton
         >
         <MyButton
           :is-sidebar-opened="sidebarStore.isOpen"
           :icon="SettingsIcon"
           @click="router.push('/settings')"
           color="primary"
-          >Settings</MyButton
+          >{{ $t('buttons.settings') }}</MyButton
         >
       </div>
       <SearchDialog />
@@ -43,7 +43,7 @@
         :is-sidebar-opened="sidebarStore.isOpen"
         @click="logout"
         color="primary"
-        >Logout</MyButton
+        >{{ $t('buttons.logout') }}</MyButton
       >
       <MyButton
         :is-sidebar-opened="sidebarStore.isOpen"
@@ -51,7 +51,7 @@
         @click="sidebarStore.toggleSidebar()"
         color="primary"
       >
-        Close SB
+        {{ $t('buttons.closeSb') }}
       </MyButton>
     </div>
   </div>

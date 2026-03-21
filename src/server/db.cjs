@@ -27,11 +27,15 @@ db.serialize(() => {
       img_mimetype CHAR(16) NOT NULL,
       likes integer,
       people_liked TEXT,
-      brand_h TEXT NOT NULL,
-      brand_tt TEXT NOT NULL,
-      brand_t TEXT NOT NULL,
-      brand_b TEXT NOT NULL, 
-      brand_s TEXT NOT NULL,
+      brand_accessory TEXT NOT NULL,
+      brand_hat TEXT NOT NULL,
+      brand_outwear TEXT NOT NULL,
+      brand_top TEXT NOT NULL, 
+      brand_bottom TEXT NOT NULL,
+      brand_shoes TEXT NOT NULL,
+      brand_bag TEXT NOT NULL,
+      brand_glasses TEXT NOT NULL,
+
       FOREIGN KEY (user) REFERENCES users(username))
   `
   const sql_refresh = `
@@ -195,16 +199,6 @@ class User {
       )
     })
   }
-  // static update(data, cb) {
-  //   const sql =
-  //     'UPDATE users SET profile_img = ?, img_mimetype = ?, description = ?, city = ? WHERE username = ?'
-  //   db.run(sql, data.image, data.img_mimetype, data.description, data.city, data.username, cb)
-  // }
-
-  // static delete(id, cb) {
-  //   if (!id) return cb(new Error('Please provide an id'))
-  //   db.run('DELETE FROM users WHERE id = ?', id, cb)
-  // }
 }
 
 class Post {
@@ -218,7 +212,7 @@ class Post {
 
   static create(data, cb) {
     const sql =
-      'INSERT INTO posts(user, description, img, img_mimetype, likes, people_liked, brand_h, brand_tt, brand_t, brand_b, brand_s) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO posts(user, description, img, img_mimetype, likes, people_liked, brand_accessory, brand_hat, brand_outwear, brand_top, brand_bottom, brand_shoes, brand_bag, brand_glasses) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?)'
 
     db.run(
       sql,
@@ -228,11 +222,14 @@ class Post {
       data.img_mimetype,
       data.likes,
       data.people_liked,
-      data.brand_h,
-      data.brand_tt,
-      data.brand_t,
-      data.brand_b,
-      data.brand_s,
+      data.brand_accessory,
+      data.brand_hat,
+      data.brand_outwear,
+      data.brand_top,
+      data.brand_bottom,
+      data.brand_shoes,
+      data.brand_bag,
+      data.brand_glasses,
       function (err) {
         if (err) return cb(err)
         cb(null, { id: this.lastID })
@@ -243,8 +240,8 @@ class Post {
   static list({ userId, limit = 20, offset = 0 } = {}, cb) {
     const sql = `
     SELECT
-      p.id, p.user, p.description,
-      p.brand_h, p.brand_tt, p.brand_t, p.brand_b, p.brand_s,
+      p.id, p.user, p.description, 
+      p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
       p.img_mimetype,
       COALESCE(lc.likes, 0) AS likes,
       CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
@@ -266,7 +263,7 @@ class Post {
     const sql = `
     SELECT
       p.id, p.user, p.description,
-      p.brand_h, p.brand_tt, p.brand_t, p.brand_b, p.brand_s,
+      p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
       p.img_mimetype,
       COALESCE(lc.likes, 0) AS likes,
       CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
@@ -289,7 +286,7 @@ class Post {
     const sql = `
     SELECT
       p.id, p.user, p.description,
-      p.brand_h, p.brand_tt, p.brand_t, p.brand_b, p.brand_s,
+      p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
       p.img_mimetype,
       COALESCE(lc.likes, 0) AS likes,
       CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
