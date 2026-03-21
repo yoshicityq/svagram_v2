@@ -35,7 +35,8 @@ watch(
 
 <style scoped lang="scss">
 .post-list {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
 }
 </style>
