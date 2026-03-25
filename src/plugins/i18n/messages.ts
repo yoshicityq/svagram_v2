@@ -14,6 +14,9 @@ export const messages = {
       delete_avatar: 'Delete avatar',
       save: 'Save',
       add_brand: 'Add brand',
+      submit: 'Submit',
+      sign_up: 'Sign up',
+      sign_in: 'Sign in',
     },
     modals: {
       create_new_post: 'Creating a new post',
@@ -23,6 +26,12 @@ export const messages = {
       photo_capture: 'Write a caption...',
       profile_description: 'Tell smth about yourself',
       search: 'Search...',
+      login: 'Login',
+      password: 'Password',
+    },
+    registration: {
+      page_title: 'Registration',
+      enter_information: 'Please enter the required information',
     },
     profilePage: {
       posts_count: 'posts',
@@ -31,16 +40,19 @@ export const messages = {
       fav_brands: 'Favorite brands',
     },
     systemSettings: {
-      page_title: 'System Settings',
+      page_title: 'System settings',
       language: 'Language',
       theme: 'Theme',
     },
     editProfile: {
-      page_title: 'Edit Profile',
+      page_title: 'Edit profile',
       username: 'Username',
       description: 'Description',
       city: 'City',
       fav_brands: 'Favorite brands',
+    },
+    accountSettings: {
+      title: 'Account settings',
     },
     categories: {
       hat: 'Hat',
@@ -52,6 +64,18 @@ export const messages = {
       glasses: 'Glasses',
       bag: 'Bag',
       default: 'Choose category',
+    },
+    helpers: {
+      nothing_found: 'Nothing found',
+      no_acc: "Don't have an account?",
+    },
+    validation: {
+      required: 'This field is required',
+      username_not_available: 'Username is not available',
+      email_not_available: 'Email is already taken',
+      email_not_valid: 'Email is not valid',
+      password_length: 'Password must be at least 6 characters',
+      username_length: 'Username must be at least 4 characters',
     },
   },
   ru: {
@@ -69,6 +93,9 @@ export const messages = {
       delete_avatar: 'Удалить аватар',
       save: 'Сохранить',
       add_brand: 'Добавить бренд',
+      submit: 'Отправить',
+      sign_up: 'Зарегистрироваться',
+      sign_in: 'Войти',
     },
     modals: {
       create_new_post: 'Создание нового поста',
@@ -78,6 +105,12 @@ export const messages = {
       photo_capture: 'Придумайте подпись...',
       profile_description: 'Напишите что-то о себе',
       search: 'Поиск...',
+      login: 'Логин',
+      password: 'Пароль',
+    },
+    registration: {
+      page_title: 'Регистрация',
+      enter_information: 'Пожалуйста введите необходимую информацию',
     },
     profilePage: {
       posts_count: 'постов',
@@ -97,9 +130,12 @@ export const messages = {
       city: 'Город',
       fav_brands: 'Любимые бренды',
     },
+    accountSettings: {
+      page_title: 'Настройки аккаунта',
+    },
     categories: {
       hat: 'Головной убор',
-      bottom: 'Нижняя одежа',
+      bottom: 'Низ',
       top: 'Верх',
       outwear: 'Верхняя одежда',
       shoes: 'Обувь',
@@ -107,6 +143,18 @@ export const messages = {
       glasses: 'Очки',
       bag: 'Сумка',
       default: 'Выберите категорию',
+    },
+    helpers: {
+      nothing_found: 'Ничего не найдено',
+      no_acc: 'Нет аккаунта?',
+    },
+    validation: {
+      required: 'Это поле обязательно',
+      username_not_available: 'Имя пользователя занято',
+      email_not_available: 'Почта уже используется',
+      email_not_valid: 'Неверный формат почты',
+      password_length: 'Минимальная длина пароля 6 символов',
+      username_length: 'Минимальная длина имени 4 сивола',
     },
   },
 }

@@ -12,7 +12,7 @@
         <UserProfile v-for="user in users" :username="user" :key="user" />
       </div>
       <div v-show="!isUsersFound && inputVal && !loading" style="margin-top: 10px">
-        Nothing Found
+        {{ $t('helpers.nothing_found') }}
       </div>
     </div>
   </div>

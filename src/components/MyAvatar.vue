@@ -5,12 +5,9 @@
 </template>
 
 <script setup lang="ts">
-import { apiFetch } from '@/api/apiFetch'
-import useAuthStore from '@/stores/auth'
-import { computed, onBeforeMount, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import noAvatar from '@/assets/images/no_avatar.png'
-import { getProfileData, getProfileImg } from '@/api/apiData'
-import type { User } from '@/types/user'
+import { getProfileImg } from '@/api/apiData'
 
 const props = defineProps({
   username: {
@@ -35,7 +32,11 @@ watch(
   () => props.username,
   async (newVal) => {
     if (newVal) {
-      avatarUrl.value = await getProfileImg(newVal)
+      try {
+        avatarUrl.value = await getProfileImg(newVal)
+      } catch (e) {
+        console.log(e)
+      }
     }
   },
   { immediate: true },

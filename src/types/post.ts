@@ -5,12 +5,14 @@ export type Post = {
   img: string
   img_mimetype: string
   likes: number
-  people_liked: string
-  brand_h: string
-  brand_tt: string
-  brand_t: string
-  brand_b: string
-  brand_s: string
+  likedByMe: boolean
+  brand_accessory: string | null
+  brand_hat: string | null
+  brand_outwear: string | null
+  brand_bottom: string | null
+  brand_shoes: string | null
+  brand_bag: string | null
+  brand_glasses: string | null
   imageUrl: string
 }
 

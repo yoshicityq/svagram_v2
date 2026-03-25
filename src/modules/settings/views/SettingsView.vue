@@ -3,7 +3,9 @@
     <div class="sub">
       <router-view />
     </div>
-    <SettingsSidebar />
+    <div class="sb-section">
+      <SettingsSidebar />
+    </div>
   </div>
 </template>
 
@@ -20,6 +22,12 @@ import SettingsSidebar from '../components/SettingsSidebar.vue'
   flex: 1;
   display: flex;
   border-right: 1px solid #ccc;
+  justify-content: center;
+}
+.sb-section {
+  width: 300px;
+  max-height: 100vh;
+  display: flex;
   justify-content: center;
 }
 </style>

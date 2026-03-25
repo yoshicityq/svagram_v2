@@ -106,7 +106,18 @@ function onFileChange(e: Event) {
   cleanupPreview()
   previewUrl.value = URL.createObjectURL(file)
 }
+function findMatchingCategory(categoryName: string, categoryVal: string, index: number) {
+  const values: Array<String> = [categoryVal]
+  let start = index + 1
+  for (start; start < addedBrands.length; start++) {
+    const currentObj = addedBrands[start]
 
+    if (currentObj && currentObj.categoryName === categoryName) {
+      values.push(currentObj.categoryValue)
+    }
+  }
+  return { categoryName: categoryName, categoryVal: values.join(', ') }
+}
 const form = useTemplateRef('form')
 async function publishPost() {
   if (!selectedFile.value) {
@@ -115,10 +126,18 @@ async function publishPost() {
   }
 
   const formData = new FormData(form.value as HTMLFormElement)
+  const processedCategories: string[] = []
 
-  addedBrands.forEach((item) => {
-    formData.set(item.categoryName, item.categoryValue)
-  })
+  for (let i = 0; i < addedBrands.length; i++) {
+    const currentObj = addedBrands[i]
+    if (currentObj) {
+      if (processedCategories.includes(currentObj.categoryName)) continue
+      processedCategories.push(currentObj.categoryName)
+
+      const resultObj = findMatchingCategory(currentObj.categoryName, currentObj.categoryValue, i)
+      formData.set(resultObj.categoryName, resultObj.categoryVal)
+    }
+  }
 
   const response = await apiFetch('/posts/create', {
     method: 'POST',

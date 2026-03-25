@@ -17,7 +17,7 @@ a {
   padding: 5px 0px;
 }
 .form-input::placeholder {
-  color: blueviolet;
+  color: rgba(86, 86, 86, 0.683);
 }
 
 .form-input:focus {

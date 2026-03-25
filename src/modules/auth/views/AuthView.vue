@@ -7,9 +7,9 @@
       <div>
         <auth-form />
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 10px">
-          <span style="font-size: 13px; color: rgb(147, 147, 147)">Don't have an account?</span>
+          <span style="font-size: 13px; color: rgb(147, 147, 147)">{{ $t('helpers.no_acc') }}</span>
           <router-link to="/reg">
-            <my-button color="transparent">Sign up</my-button>
+            <my-button color="transparent">{{ $t('buttons.sign_up') }}</my-button>
           </router-link>
         </div>
       </div>

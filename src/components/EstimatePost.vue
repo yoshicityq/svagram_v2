@@ -70,13 +70,17 @@ function handleRate(value: number | null) {
 }
 
 async function toggleLike(id: number) {
-  const res = await apiFetch(`/posts/${id}/like`, { method: 'POST' })
-  const data = await res.json()
-  likes.value = data.likes
-  isPostLikedByCurrentUser.value = data.liked
-  if (modalStore.openedPostLikes) {
-    modalStore.openedPostLikes.likes = data.likes
-    modalStore.openedPostLikes.likedByMe = data.liked
+  try {
+    const res = await apiFetch(`/posts/${id}/like`, { method: 'POST' })
+    const data = await res.json()
+    likes.value = data.likes
+    isPostLikedByCurrentUser.value = data.liked
+    if (modalStore.openedPostLikes) {
+      modalStore.openedPostLikes.likes = data.likes
+      modalStore.openedPostLikes.likedByMe = data.liked
+    }
+  } catch (e) {
+    console.log(e)
   }
 }
 
@@ -84,17 +88,20 @@ watch(
   () => props.postId,
   async (newVal) => {
     if (newVal) {
-      const likesData = await getPostLikes(props.postId)
-      const ratingData = await getPostRating(props.postId)
-      console.log(likesData)
-      if (likesData) {
-        likes.value = likesData.likes
-        isPostLikedByCurrentUser.value = likesData.likedByMe
-      }
-      if (ratingData) {
-        avgRating.value = ratingData.avgRating
-        ratingsCount.value = ratingData.ratingsCount
-        myRating.value = ratingData.myRating
+      try {
+        const likesData = await getPostLikes(props.postId)
+        const ratingData = await getPostRating(props.postId)
+        if (likesData) {
+          likes.value = likesData.likes
+          isPostLikedByCurrentUser.value = likesData.likedByMe
+        }
+        if (ratingData) {
+          avgRating.value = ratingData.avgRating
+          ratingsCount.value = ratingData.ratingsCount
+          myRating.value = ratingData.myRating
+        }
+      } catch (e) {
+        console.log(e)
       }
     }
   },
@@ -104,12 +111,16 @@ watch(
   () => myRating.value,
   async (newVal) => {
     if (newVal) {
-      const ratingData = await getPostRating(props.postId)
+      try {
+        const ratingData = await getPostRating(props.postId)
 
-      if (ratingData) {
-        avgRating.value = ratingData.avgRating
-        ratingsCount.value = ratingData.ratingsCount
-        myRating.value = ratingData.myRating
+        if (ratingData) {
+          avgRating.value = ratingData.avgRating
+          ratingsCount.value = ratingData.ratingsCount
+          myRating.value = ratingData.myRating
+        }
+      } catch (e) {
+        console.log(e)
       }
     }
   },

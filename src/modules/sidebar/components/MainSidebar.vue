@@ -80,9 +80,13 @@ const router = useRouter()
 const username = computed(() => authStore.user?.username as string)
 
 async function logout() {
-  const response = await logoutUser()
-  if (response) {
-    router.push('/auth')
+  try {
+    const response = await logoutUser()
+    if (response) {
+      router.push('/auth')
+    }
+  } catch (e) {
+    console.log(e)
   }
 }
 </script>

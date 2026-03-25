@@ -265,6 +265,38 @@ app.get('/users/:username', authRequired, (req, res, next) => {
   })
 })
 
+app.get('/users/check-username/:username', (req, res, next) => {
+  const username = String(req.params.username ?? '').trim()
+
+  if (!username) {
+    return res.status(400).json({ message: 'Username is required' })
+  }
+
+  User.findByUsername(username, (err, user) => {
+    if (err) return next(err)
+
+    return res.json({
+      isAvailable: !user,
+    })
+  })
+})
+app.get('/users/check-email/:email', (req, res, next) => {
+  const email = String(req.params.email ?? '')
+    .trim()
+    .toLowerCase()
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' })
+  }
+
+  User.findByEmail(email, (err, user) => {
+    if (err) return next(err)
+
+    return res.json({
+      isAvailable: !user,
+    })
+  })
+})
 app.get('/posts', authRequired, (req, res, next) => {
   const limit = Math.min(parseInt(req.query.limit ?? '20', 10) || 20, 50)
   const offset = parseInt(req.query.offset ?? '0', 10) || 0

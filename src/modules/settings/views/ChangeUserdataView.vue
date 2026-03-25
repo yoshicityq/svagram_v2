@@ -1,7 +1,7 @@
 <template>
   <div class="userdata-view">
     <div class="header">
-      <span class="header-title">Change Userdata</span>
+      <span class="header-title">{{ $t('accountSettings.page_title') }}</span>
     </div>
     <div class="body">
       <div class="option">

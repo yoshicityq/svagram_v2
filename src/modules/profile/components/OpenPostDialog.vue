@@ -3,7 +3,10 @@
     <div v-show="modalStore.isPostDialogOpen" class="post-wrapper" @click="closeDialog">
       <div @click.stop class="post">
         <div class="post-image">
-          <img :src="`http://localhost:3000${post?.imageUrl}`" alt="" class="photo" />
+          <div v-if="loading" class="post-image-loader">
+            <MyLoader />
+          </div>
+          <img v-else :src="`http://localhost:3000${post?.imageUrl}`" alt="" class="photo" />
         </div>
         <div class="post-info">
           <div class="info-header">
@@ -26,11 +29,12 @@
           <div class="info-footer">
             <div class="brands">
               <div class="brands-items" :class="{ 'brands-items__visible': isBrandsVisible }">
-                <div>{{ post?.brand_h }}</div>
-                <div>{{ post?.brand_tt }}</div>
-                <div>{{ post?.brand_t }}</div>
-                <div>{{ post?.brand_b }}</div>
-                <div>{{ post?.brand_s }}</div>
+                <div v-for="value in onlyBrandsArray">
+                  <span>{{ $t(CategoryReadable(CategoryBackend(value[0])!)!) }} </span>
+                  <span v-for="brand in value[1]">
+                    {{ brand }}
+                  </span>
+                </div>
               </div>
 
               <div class="brands-controller" @click="toggleBrands">
@@ -55,34 +59,83 @@ import CommentsIcon from '@/assets/icons/CommentsIcon.vue'
 import LikesIcon from '@/assets/icons/LikesIcon.vue'
 import RatingIcon from '@/assets/icons/RatingIcon.vue'
 import CommentsInput from '@/components/CommentsInput.vue'
+import { CategoryBackend, CategoryReadable } from '@/components/enums/categories'
 import EstimatePost from '@/components/EstimatePost.vue'
+import MyLoader from '@/components/MyLoader.vue'
 import PostRatingPopover from '@/components/PostRatingPopover.vue'
 import UserProfile from '@/components/UserProfile.vue'
 import useModalStore from '@/stores/modals'
 import type { Post, PostLikes } from '@/types/post'
-import { computed, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const modalStore = useModalStore()
-
 const post = ref<Post | null>(null)
 const username = ref<string>('')
 const postId = computed(() => modalStore.openedPostId as number)
+const onlyBrandsArray = ref<Array<[string, string[]]>>([])
+const loading = ref(false)
 
-async function getPost() {
-  const response = await apiFetch(`/posts/${postId.value}`)
-  const data = await response.json()
-  const ratingData = await getPostRating(postId.value)
-  const likesData = await getPostLikes(postId.value)
-  if (data && ratingData && likesData) {
-    username.value = data.post.user
-    post.value = data.post
+async function getPost(id: number) {
+  loading.value = true
 
-    modalStore.openedPostRating = ratingData
-    modalStore.openedPostLikes = likesData
+  try {
+    const response = await apiFetch(`/posts/${id}`)
+    const data = await response.json()
+
+    const ratingData = await getPostRating(id)
+    const likesData = await getPostLikes(id)
+
+    if (data?.post && ratingData && likesData) {
+      username.value = data.post.user
+      post.value = formatBrandData(data.post)
+      onlyBrandsArray.value = onlyBrandEntries(data.post)
+
+      console.log(onlyBrandsArray.value)
+
+      modalStore.openedPostRating = ratingData
+      modalStore.openedPostLikes = likesData
+    }
+  } catch (e) {
+    console.log(e)
+  } finally {
+    loading.value = false
   }
 }
+function parseBrands(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
 
+function onlyBrandEntries(data: Post): Array<[string, string[]]> {
+  return Object.entries(data).flatMap(([key, value]) => {
+    if (!key.startsWith('brand') || typeof value !== 'string') {
+      return []
+    }
+
+    const brands = parseBrands(value)
+
+    if (brands.length === 0) {
+      return []
+    }
+
+    return [[key, brands]]
+  })
+}
+function formatBrandData(data: Post) {
+  return Object.fromEntries(
+    Object.entries(data).map(([key, value]) => {
+      if (key.startsWith('brand') && typeof value === 'string') {
+        return [key, parseBrands(value)]
+      }
+
+      return [key, value]
+    }),
+  )
+}
+// const brandEntries = computed(() => Object.entries(post.value))
 const route = useRoute()
 const router = useRouter()
 
@@ -100,8 +153,8 @@ function toggleBrands() {
 
 watch(
   () => postId.value,
-  async () => {
-    if (postId.value) await getPost()
+  async (newVal) => {
+    if (newVal) await getPost(newVal)
     else {
       post.value = null
     }
@@ -135,6 +188,13 @@ watch(
   overflow: hidden;
   border-bottom-left-radius: 5px;
   border-top-left-radius: 5px;
+  &-loader {
+    width: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
 }
 .photo {
   width: 100%;
