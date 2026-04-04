@@ -1,82 +1,96 @@
 <template>
-  <div class="main-sidebar" :class="{ closed: !sidebarStore.isOpen }">
-    <div class="header">
-      <StarIcon />
-      <span v-show="sidebarStore.isOpen">SWAGRAM</span>
-    </div>
-    <div class="body">
-      <div v-show="!sidebarStore.isSearchActive" class="body_buttons">
-        <MyButton
-          :is-sidebar-opened="sidebarStore.isOpen"
-          :icon="SearchIcon"
-          color="primary"
-          @click="sidebarStore.toggleSearch"
-          >{{ $t('buttons.search') }}</MyButton
-        >
-        <MyButton
-          :is-sidebar-opened="sidebarStore.isOpen"
-          :icon="FeedIcon"
-          @click="router.push('/feed')"
-          color="primary"
-          >{{ $t('buttons.feed') }}</MyButton
-        >
-        <MyButton
-          :is-sidebar-opened="sidebarStore.isOpen"
-          :icon="SettingsIcon"
-          @click="router.push('/settings')"
-          color="primary"
-          >{{ $t('buttons.settings') }}</MyButton
-        >
+  <aside class="sidebar-wrapper" :class="{ closed: !sidebarStore.isOpen }">
+    <div class="main-sidebar" :class="{ closed: !sidebarStore.isOpen }">
+      <div class="header">
+        <div class="brand">
+          <LogoIcon class="brand-logo" />
+          <span v-show="sidebarStore.isOpen" class="brand-title">SWAGRAM</span>
+        </div>
       </div>
-      <SearchDialog />
-      <!-- <MyButton
-        :is-sidebar-opened="sidebarStore.isOpen"
-        :icon="NotificationsIcon"
-        @click="router.push('/notifications')"
-        >Notifications</MyButton
-      > -->
+
+      <div class="body">
+        <div v-show="!sidebarStore.isSearchActive" class="body-buttons">
+          <MyButton
+            :is-sidebar-opened="sidebarStore.isOpen"
+            :icon="SearchIcon"
+            @click="sidebarStore.toggleSearch"
+          >
+            {{ $t('buttons.search') }}
+          </MyButton>
+
+          <MyButton
+            :is-sidebar-opened="sidebarStore.isOpen"
+            :icon="FeedIcon"
+            @click="router.push('/feed')"
+          >
+            {{ $t('buttons.feed') }}
+          </MyButton>
+
+          <MyButton
+            :is-sidebar-opened="sidebarStore.isOpen"
+            :icon="SettingsIcon"
+            @click="router.push('/settings')"
+          >
+            {{ $t('buttons.settings') }}
+          </MyButton>
+        </div>
+
+        <SearchDialog />
+      </div>
+
+      <div v-show="!sidebarStore.isSearchActive" class="footer">
+        <div class="profile-block">
+          <UserProfile :username="username" :closable="true" />
+        </div>
+
+        <div class="footer-actions">
+          <MyButton
+            :icon="LogoutIcon"
+            :is-sidebar-opened="sidebarStore.isOpen"
+            @click="logout"
+            color="transparent"
+          >
+            {{ $t('buttons.logout') }}
+          </MyButton>
+
+          <MyButton
+            :is-sidebar-opened="sidebarStore.isOpen"
+            :icon="CloseSbIcon"
+            @click="sidebarStore.toggleSidebar()"
+            color="transparent"
+            class="sidebar-toggle-btn"
+          >
+            {{ $t('buttons.closeSb') }}
+          </MyButton>
+        </div>
+      </div>
     </div>
-    <div v-show="!sidebarStore.isSearchActive" class="footer">
-      <UserProfile :username="username" :closable="true" />
-      <MyButton
-        :icon="LogoutIcon"
-        :is-sidebar-opened="sidebarStore.isOpen"
-        @click="logout"
-        color="primary"
-        >{{ $t('buttons.logout') }}</MyButton
-      >
-      <MyButton
-        :is-sidebar-opened="sidebarStore.isOpen"
-        :icon="CloseSbIcon"
-        @click="sidebarStore.toggleSidebar()"
-        color="primary"
-      >
-        {{ $t('buttons.closeSb') }}
-      </MyButton>
-    </div>
-  </div>
+  </aside>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+
 import CloseSbIcon from '@/assets/icons/CloseSbIcon.vue'
 import FeedIcon from '@/assets/icons/FeedIcon.vue'
-import NotificationsIcon from '@/assets/icons/NotificationsIcon.vue'
 import SearchIcon from '@/assets/icons/SearchIcon.vue'
 import SettingsIcon from '@/assets/icons/SettingsIcon.vue'
-import MyButton from '@/components/UI/MyButton.vue'
-import { computed } from 'vue'
-import useSidebarStore from '@/stores/sidebar'
-import StarIcon from '@/assets/icons/StarIcon.vue'
-import { useRouter } from 'vue-router'
-import useAuthStore from '@/stores/auth'
-import UserProfile from '@/components/UserProfile.vue'
 import LogoutIcon from '@/assets/icons/LogoutIcon.vue'
-import { logoutUser } from '../api/actions'
+import LogoIcon from '@/assets/icons/LogoIcon.vue'
+
+import MyButton from '@/components/UI/MyButton.vue'
+import UserProfile from '@/components/UserProfile.vue'
 import SearchDialog from './SearchDialog.vue'
+
+import useSidebarStore from '@/stores/sidebar'
+import useAuthStore from '@/stores/auth'
+import { logoutUser } from '../api/actions'
 
 const sidebarStore = useSidebarStore()
 const authStore = useAuthStore()
 const router = useRouter()
+
 const username = computed(() => authStore.user?.username as string)
 
 async function logout() {
@@ -92,52 +106,153 @@ async function logout() {
 </script>
 
 <style scoped lang="scss">
+.sidebar-wrapper {
+  width: 280px;
+  padding: 16px;
+  flex-shrink: 0;
+  transition:
+    width 0.25s ease,
+    padding 0.25s ease;
+}
+
+.sidebar-wrapper.closed {
+  width: 96px;
+  padding: 16px 10px;
+}
+
 .main-sidebar {
-  box-sizing: border-box;
+  height: 100%;
+  min-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid blueviolet;
-  height: 100%;
-  width: 200px;
-  padding: 10px 20px;
-  align-items: center;
+  gap: 20px;
+  padding: 16px;
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius-xl);
+  background: var(--sidebar-bg);
+  box-shadow: var(--card-shadow);
   overflow: hidden;
-
   transition:
-    width 0.4s ease,
-    padding 0.4s ease;
+    padding 0.25s ease,
+    border-radius 0.25s ease;
 }
 
 .main-sidebar.closed {
-  width: 75px;
-  padding: 10px 10px;
+  padding: 14px 10px;
 }
 
 .header {
-  font-size: 27px;
-  font-weight: bold;
+  flex-shrink: 0;
   display: flex;
-  gap: 5px;
-  align-items: center;
+  justify-content: center;
 }
+
+.brand {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+}
+
+.brand-logo {
+  flex-shrink: 0;
+}
+
+.brand-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--icon-primary);
+  white-space: nowrap;
+}
+
 .body {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  margin-top: 20px;
+  gap: 16px;
+}
+
+.body-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: 100%;
-  .body_buttons {
-    display: flex;
-    flex-direction: column;
+}
+
+.footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-muted);
+}
+
+.profile-block {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.footer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.closed .brand {
+  justify-content: center;
+  padding: 0;
+}
+
+.closed .footer {
+  align-items: center;
+}
+
+.closed .profile-block,
+.closed .footer-actions,
+.closed .body-buttons {
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .sidebar-wrapper {
     width: 100%;
-    gap: 15px;
+    padding: 12px;
+  }
+
+  .sidebar-wrapper.closed {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .main-sidebar {
+    min-height: auto;
+  }
+
+  .main-sidebar.closed {
+    padding: 14px 12px;
+  }
+
+  .closed .brand,
+  .closed .footer,
+  .closed .profile-block,
+  .closed .footer-actions,
+  .closed .body-buttons {
+    align-items: stretch;
+    justify-content: flex-start;
   }
 }
-.footer {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  width: 100%;
+.sidebar-toggle-btn :deep(.my-button__icon) {
+  transition: transform 0.3s ease;
+}
+
+.sidebar-wrapper.closed .sidebar-toggle-btn :deep(.my-button__icon) {
+  transform: rotate(180deg);
 }
 </style>

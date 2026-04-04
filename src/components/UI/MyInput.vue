@@ -23,14 +23,32 @@ function handleInput(e: Event) {
 
 <style scoped lang="scss">
 .my-input {
-  border: none;
-  border-bottom: 2px solid rgba(111, 111, 111, 0.341);
-  padding: 5px 0px;
   width: 100%;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  font: inherit;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.my-input::placeholder {
+  color: var(--input-placeholder);
+}
+
+.my-input:hover {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
 }
 
 .my-input:focus {
   outline: none;
-  border-bottom: 2px solid blueviolet;
+  border-color: var(--input-border-active);
+  box-shadow: var(--focus-ring);
 }
 </style>

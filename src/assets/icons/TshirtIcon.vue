@@ -1,17 +1,8 @@
 <template>
-  <svg
-    height="24px"
-    width="24px"
-    version="1.1"
-    id="_x32_"
-    xmlns="http://www.w3.org/2000/svg"
-    xmlns:xlink="http://www.w3.org/1999/xlink"
-    viewBox="0 0 512 512"
-    xml:space="preserve"
-  >
+  <svg height="24px" width="24px" viewBox="0 0 512 512" xml:space="preserve">
     <g>
       <path
-        class="st0"
+        class="icon-color"
         d="M504.426,264.114c-26.334-77.496-35.269-103.76-38.513-113.101l-0.008-0.102l-0.696-2.204
 		c-13.703-42.648-49.457-95.63-141.953-105.776l-25.858-2.83l-0.766,25.998c-0.665,22.56-18.558,40.256-40.742,40.28
 		c-22.16,0-40.084-17.674-40.772-40.232l-0.797-25.999l-25.85,2.869C95.99,53.255,60.299,106.276,46.634,148.941l-0.68,2.142
@@ -26,7 +17,7 @@
 </template>
 
 <style scoped>
-.st0 {
-  fill: #000000;
+.icon-color {
+  fill: var(--icon-primary);
 }
 </style>

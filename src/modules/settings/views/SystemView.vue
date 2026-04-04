@@ -1,74 +1,190 @@
 <template>
   <div class="system-view">
     <div class="header">
-      <span class="header-title">{{ $t('systemSettings.page_title') }}</span>
+      <div class="header-text">
+        <span class="header-title">{{ $t('title.system_title') }}</span>
+        <span class="header-subtitle">{{ $t('description.system_description') }}</span>
+      </div>
     </div>
+
     <div class="body">
-      <div class="localization">
-        <span>{{ $t('systemSettings.language') }}</span>
-        <LanguageSelect />
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-title">{{ $t('title.lang_title') }}</span>
+            <span class="setting-description">{{ $t('description.lang_description') }}</span>
+          </div>
+
+          <div class="setting-control">
+            <LanguageSelect />
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-title">{{ $t('title.theme_title') }}</span>
+            <span class="setting-description">{{ $t('description.theme_description') }}</span>
+          </div>
+
+          <div class="setting-control">
+            <ThemeSwitcher v-model="theme" />
+          </div>
+        </div>
+
+        <!--
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-title">Notifications</span>
+            <span class="setting-description">Manage app notifications</span>
+          </div>
+
+          <div class="setting-control setting-control--placeholder">
+            <span>Option</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-title">Text size</span>
+            <span class="setting-description">Adjust interface font size</span>
+          </div>
+
+          <div class="setting-control setting-control--placeholder">
+            <span>Option</span>
+          </div>
+        </div>
+        -->
       </div>
-      <div class="option">
-        <span>{{ $t('systemSettings.theme') }}</span>
-        <span>Option</span>
-      </div>
-      <!-- <div class="option">
-        <span>Notifications</span>
-        <span>Option</span>
-      </div>
-      <div class="option">
-        <span>Text size</span>
-        <span>Option</span>
-      </div> -->
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import LanguageSelect from '@/components/LanguageSelect.vue'
+import { computed } from 'vue'
+import LanguageSelect from '../components/LanguageSelect.vue'
+import ThemeSwitcher from '../components/ThemeSwitcher.vue'
+import { useSettingsStore } from '@/stores/settings'
+
+const settingsStore = useSettingsStore()
+const theme = computed({
+  get() {
+    return settingsStore.isLightTheme
+  },
+  set(val) {
+    settingsStore.isLightTheme = val
+  },
+})
 </script>
 
 <style scoped lang="scss">
 .system-view {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
-.header {
-  border-bottom: 1px solid #ccc;
 
-  .header-title {
-    font-size: 40px;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
+.header {
+  border-bottom: 1px solid var(--border-primary);
+  padding-bottom: 16px;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.header-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text-primary);
+}
+
+.header-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
 }
 
 .body {
-  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.settings-card {
+  width: 100%;
+  max-width: 720px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding-right: 20px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
 }
 
-.option {
+.setting-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  width: 100%;
-  padding: 10px;
-  border: 1px solid black;
-  border-radius: 5px;
+  gap: 20px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-muted);
 }
 
-.localization {
-  width: 300px;
-  height: 150px;
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  min-width: 0;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.setting-description {
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.setting-control {
+  flex-shrink: 0;
+}
+
+.setting-control--placeholder {
+  min-height: 42px;
+  min-width: 96px;
+  padding: 0 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-secondary);
+  display: inline-flex;
   align-items: center;
-  padding: 10px 15px;
-  border: 2px solid blueviolet;
-  background-color: rgba(137, 43, 226, 0.168);
-  border-radius: 10px;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+@media (max-width: 700px) {
+  .header-title {
+    font-size: 28px;
+  }
+
+  .setting-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .setting-control {
+    width: 100%;
+  }
 }
 </style>

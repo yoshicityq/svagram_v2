@@ -38,6 +38,6 @@ import AuthForm from '../components/AuthForm.vue'
 }
 
 .image {
-  width: 500px;
+  width: 550px;
 }
 </style>

@@ -1,14 +1,21 @@
 <template>
-  <button class="my-button" :class="`my-button__${color}`">
-    <component :is="icon" v-if="icon" />
-    <div v-if="isSidebarOpened">
+  <button
+    class="my-button"
+    :class="[
+      `my-button--${color || 'default'}`,
+      `my-button--${size}`,
+      { 'my-button--icon-only': icon && !isSidebarOpened },
+    ]"
+  >
+    <component :is="icon" v-if="icon" class="my-button__icon" />
+    <span v-if="isSidebarOpened" class="my-button__label">
       <slot />
-    </div>
+    </span>
   </button>
 </template>
 
 <script setup lang="ts">
-const props = defineProps({
+defineProps({
   icon: {
     type: [Object, Function],
     required: false,
@@ -20,47 +27,187 @@ const props = defineProps({
   },
   color: {
     type: String,
-    default: '',
+    default: 'default',
+  },
+  size: {
+    type: String,
+    default: 's',
   },
 })
 </script>
 
 <style scoped lang="scss">
 .my-button {
-  display: flex;
+  appearance: none;
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: var(--button-text);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 5px 10px;
-  border: 2px solid blueviolet;
-  border-radius: 7px;
-  background-color: white;
-  color: blueviolet;
-  cursor: pointer;
-  transition: 0.4s all ease;
-  &__primary {
-    background-color: blueviolet;
-    color: white;
-  }
-  &__transparent {
-    background-color: transparent;
-    color: blueviolet;
-    border: none;
-  }
+
+  font-weight: 600;
+  font-family: inherit;
+  text-align: center;
+  white-space: nowrap;
+
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
 }
-.my-button__transparent:active {
-  background-color: rgba(134, 86, 231, 0.248) !important;
+
+.my-button:hover {
+  background: var(--button-bg-hover);
+  border-color: var(--button-border-hover);
 }
-.my-button__primary:active {
-  background-color: rgb(158, 70, 240) !important;
-  border-color: rgb(158, 70, 240) !important;
-}
+
 .my-button:active {
-  transform: scale(0.9);
-  transition: 0.4s ease all;
-  background-color: rgba(230, 230, 230, 0.566);
+  background: var(--button-bg-active);
+  transform: scale(0.98);
 }
-.my-button__primary:hover {
-  box-shadow: 0px 0px 20px 5px rgba(134, 86, 231, 0.645);
+
+.my-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring), var(--shadow-sm);
+}
+
+.my-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.my-button__icon {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.my-button__label {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* default */
+.my-button--default {
+  border-color: var(--button-border);
+  background: var(--button-bg);
+  color: var(--button-text);
+}
+
+.my-button--default:hover {
+  background: var(--button-bg-hover);
+  border-color: var(--button-border-hover);
+}
+
+.my-button--default:active {
+  background: var(--button-bg-active);
+}
+
+/* primary */
+.my-button--primary {
+  border-color: var(--button-primary-border);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  box-shadow: var(--shadow-md);
+}
+
+.my-button--primary:hover {
+  background: var(--button-primary-bg-hover);
+  border-color: var(--button-primary-bg-hover);
+}
+
+.my-button--primary:active {
+  background: var(--button-primary-bg-active);
+  border-color: var(--button-primary-bg-active);
+}
+
+/* transparent / ghost */
+.my-button--transparent {
+  border-color: var(--button-ghost-border);
+  background: var(--button-ghost-bg);
+  color: var(--button-ghost-text);
+  box-shadow: none;
+}
+
+.my-button--transparent:hover {
+  background: var(--button-ghost-bg-hover);
+  border-color: var(--button-ghost-border);
+}
+
+.my-button--transparent:active {
+  background: var(--button-ghost-bg-active);
+}
+
+/* sizes */
+.my-button--xs {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.my-button--s {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.my-button--m {
+  min-height: 42px;
+  padding: 0 16px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.my-button--l {
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.my-button--xl {
+  min-height: 52px;
+  padding: 0 22px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+/* icon only */
+.my-button--icon-only {
+  padding-left: 0;
+  padding-right: 0;
+  aspect-ratio: 1 / 1;
+}
+
+.my-button--icon-only.my-button--xs {
+  width: 32px;
+}
+
+.my-button--icon-only.my-button--s {
+  width: 38px;
+}
+
+.my-button--icon-only.my-button--m {
+  width: 42px;
+}
+
+.my-button--icon-only.my-button--l {
+  width: 46px;
+}
+
+.my-button--icon-only.my-button--xl {
+  width: 52px;
 }
 </style>

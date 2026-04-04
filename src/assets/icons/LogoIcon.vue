@@ -1,0 +1,38 @@
+<template>
+  <svg height="40px" width="40px" version="1.1" viewBox="0 0 512 512" xml:space="preserve">
+    <g>
+      <polygon
+        class="icon-color"
+        points="424.853,91.195 266.896,0 266.896,96.85 340.979,139.606 	"
+      />
+      <polygon class="icon-color" points="245.085,96.85 245.085,0 87.147,91.195 171.011,139.606 	" />
+      <polygon
+        class="icon-color"
+        points="160.11,158.513 76.247,110.092 76.247,401.918 160.11,353.488 	"
+      />
+      <polygon
+        class="icon-color"
+        points="87.147,420.805 245.085,512 245.085,415.15 171.02,372.375 	"
+      />
+      <polygon
+        class="icon-color"
+        points="266.896,415.158 266.896,512 424.844,420.805 340.971,372.375 	"
+      />
+      <polygon
+        class="icon-color"
+        points="351.881,158.513 351.881,353.488 435.753,401.918 435.753,110.082 	"
+      />
+      <path
+        class="icon-color"
+        d="M330.07,158.503l-74.075-42.766l-74.074,42.775v194.976l74.074,42.774l74.075-42.774V158.503z
+		 M207.348,260.016V187.89l55.496-33.294L207.348,260.016z"
+      />
+    </g>
+  </svg>
+</template>
+
+<style scoped>
+.icon-color {
+  fill: var(--icon-primary);
+}
+</style>

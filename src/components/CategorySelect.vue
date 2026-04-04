@@ -1,31 +1,42 @@
 <template>
-  <div class="lang-select" ref="categorySelectRef">
-    <div class="input" :class="{ input__active: isInputFocused }">
-      <label :for="`input-radio_${id}`" class="input_category">
-        {{ chosenCategory }}
-      </label>
-      <input type="text" :id="`input-radio_${id}`" @click="isInputFocused = !isInputFocused" />
+  <div class="category-select" ref="categorySelectRef">
+    <button
+      type="button"
+      class="trigger"
+      :class="{ 'trigger--active': isOpen }"
+      @click="toggleOpen"
+    >
+      <span class="trigger__label">
+        {{ selectedOption?.categoryName ?? t('categories.default_category') }}
+      </span>
 
-      <ChevronIcon class="chevron" :class="{ active: isInputFocused }" />
-    </div>
+      <ChevronIcon class="trigger__chevron" :class="{ active: isOpen }" />
+    </button>
 
-    <div v-if="isInputFocused" class="list">
-      <div
+    <div v-if="isOpen" class="dropdown">
+      <button
         v-for="category in categoriesOptions"
-        :key="category.categoryName"
-        class="list-item"
+        :key="category.categoryVal"
+        type="button"
+        class="dropdown__item"
+        :class="{ 'dropdown__item--selected': modelValue === category.categoryVal }"
         @click="chooseCategory(category)"
       >
         {{ category.categoryName }}
-      </div>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import ChevronIcon from '@/assets/icons/ChevronIcon.vue'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+
+type Category = {
+  categoryName: string
+  categoryVal: string
+}
 
 const props = defineProps({
   modelValue: {
@@ -37,17 +48,15 @@ const props = defineProps({
     required: true,
   },
 })
-type Category = {
-  categoryName: string
-  categoryVal: string
-}
+
+const emits = defineEmits(['update:modelValue'])
+
 const { t } = useI18n({ useScope: 'global' })
 
-const isInputFocused = ref<boolean>(false)
+const isOpen = ref(false)
+const categorySelectRef = ref<HTMLElement | null>(null)
 
-const chosenCategory = ref<string>(t('categories.default'))
-
-const categoriesOptions = [
+const categoriesOptions = computed<Category[]>(() => [
   { categoryName: t('categories.accessory'), categoryVal: 'brand_accessory' },
   { categoryName: t('categories.hat'), categoryVal: 'brand_hat' },
   { categoryName: t('categories.outwear'), categoryVal: 'brand_outwear' },
@@ -56,116 +65,132 @@ const categoriesOptions = [
   { categoryName: t('categories.shoes'), categoryVal: 'brand_shoes' },
   { categoryName: t('categories.bag'), categoryVal: 'brand_bag' },
   { categoryName: t('categories.glasses'), categoryVal: 'brand_glasses' },
-]
-const emits = defineEmits(['update:modelValue'])
-function chooseCategory(obj: Category) {
-  chosenCategory.value = obj.categoryName
-  emits('update:modelValue', obj.categoryVal)
-  isInputFocused.value = false
-}
+])
 
-const categorySelectRef = ref<HTMLElement | null>(null)
-
-function handleClickOutside(event: MouseEvent) {
-  const target = event.target as Node
-
-  if (categorySelectRef.value && !categorySelectRef.value.contains(target)) {
-    isInputFocused.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
+const selectedOption = computed(() => {
+  return categoriesOptions.value.find((item) => item.categoryVal === props.modelValue) ?? null
 })
 
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+function toggleOpen() {
+  isOpen.value = !isOpen.value
+}
+
+function chooseCategory(category: Category) {
+  emits('update:modelValue', category.categoryVal)
+  isOpen.value = false
+}
 </script>
 
 <style scoped lang="scss">
-.lang-select {
+.category-select {
   position: relative;
   width: 100%;
-  max-width: 200px;
+  max-width: 220px;
 }
 
-.input {
+.trigger {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
   display: flex;
   align-items: center;
-  border-bottom: 2px solid rgba(86, 86, 86, 0.34);
-  width: 100%;
-  padding-left: 3px;
-  padding-right: 3px;
-
-  background-color: white;
   justify-content: space-between;
-  label {
-    width: 100%;
-    cursor: pointer;
-    display: flex;
-    gap: 3px;
-  }
-  input {
-    border: none;
-    display: none;
-  }
-
-  input:focus {
-    outline: none;
-  }
-
-  &__active {
-    border-bottom: 2px solid blueviolet;
-  }
-  &_category {
-    font-size: 13px;
-  }
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
 }
 
-.list {
+.trigger:hover {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.trigger:focus-visible {
+  outline: none;
+  border-color: var(--input-border-active);
+  box-shadow: var(--focus-ring);
+}
+
+.trigger--active {
+  border-color: var(--input-border-active);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.trigger__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.trigger__chevron {
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+  color: var(--icon-secondary);
+}
+
+.trigger__chevron.active {
+  transform: rotate(180deg);
+}
+
+.dropdown {
   position: absolute;
-  border: 2px solid blueviolet;
-  padding: 3px;
-  border-radius: 5px;
-  top: 30px;
-  max-height: 150px;
-  height: fit-content;
-  overflow-y: scroll;
-  background-color: white;
-  z-index: 10;
-  width: 100%;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--dropdown-border);
+  border-radius: var(--radius-md);
+  background: var(--dropdown-bg);
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  .list-item {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .list-item:hover {
-    color: blueviolet;
-  }
+  gap: 4px;
 }
 
-.not-found {
-  padding: 4px 2px;
-  color: gray;
-}
-
-.chevron {
-  transition: all ease 0.4s;
-}
-
-.cross {
-  width: 10px;
+.dropdown__item {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  display: flex;
+  align-items: center;
   cursor: pointer;
-  margin-right: 5px;
+  text-align: left;
+  font: inherit;
+  color: var(--text-secondary);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
 }
 
-.active {
-  transform: rotate(180deg);
+.dropdown__item:hover {
+  background: var(--dropdown-item-hover);
+  color: var(--icon-primary);
+}
+
+.dropdown__item:focus-visible {
+  outline: none;
+  background: var(--dropdown-item-active);
+}
+
+.dropdown__item--selected {
+  background: var(--dropdown-item-active);
+  color: var(--accent);
+  font-weight: 600;
 }
 </style>

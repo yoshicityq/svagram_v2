@@ -21,8 +21,7 @@ import SettingsSidebar from '../components/SettingsSidebar.vue'
 .sub {
   flex: 1;
   display: flex;
-  border-right: 1px solid #ccc;
-  justify-content: center;
+  border-right: 1px solid var(--border-primary);
 }
 .sb-section {
   width: 300px;

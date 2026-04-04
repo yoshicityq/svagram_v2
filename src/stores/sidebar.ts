@@ -9,10 +9,15 @@ const useSidebarStore = defineStore('sidebar', {
   actions: {
     toggleSidebar() {
       this.isOpen = !this.isOpen
+      localStorage.setItem('isOpen', String(this.isOpen))
     },
     toggleSearch() {
+      if (!this.isOpen) this.isOpen = true
       this.isSearchActive = !this.isSearchActive
     },
+  },
+  persist: {
+    storage: localStorage,
   },
 })
 

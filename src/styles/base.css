@@ -10,17 +10,6 @@ a {
   color: inherit;
 }
 
-.form-input {
-  border: none;
-  border-bottom: 2px solid rgba(86, 86, 86, 0.34);
-
-  padding: 5px 0px;
-}
-.form-input::placeholder {
-  color: rgba(86, 86, 86, 0.683);
-}
-
-.form-input:focus {
-  outline: none;
-  border-bottom: 2px solid blueviolet;
+body {
+  background-color: var(--bg-app);
 }

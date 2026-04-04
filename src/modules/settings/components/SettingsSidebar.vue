@@ -1,22 +1,35 @@
 <template>
-  <div class="sidebar">
-    <router-link :to="{ name: 'system' }">
-      <div class="sidebar-section" :class="{ active: currentSection === 'system' }">
-        {{ $t('systemSettings.page_title') }}
-      </div>
-    </router-link>
-    <router-link :to="{ name: 'edit' }">
-      <div class="sidebar-section" :class="{ active: currentSection === 'edit' }">
-        {{ $t('editProfile.page_title') }}
-      </div>
+  <nav class="sidebar" aria-label="Settings navigation">
+    <router-link
+      :to="{ name: 'system' }"
+      class="sidebar-link"
+      :class="{ active: currentSection === 'system' }"
+    >
+      <span class="sidebar-link__text">
+        {{ $t('title.system_title') }}
+      </span>
     </router-link>
 
-    <router-link :to="{ name: 'userdata' }">
-      <div class="sidebar-section" :class="{ active: currentSection === 'userdata' }">
-        {{ $t('accountSettings.page_title') }}
-      </div>
+    <router-link
+      :to="{ name: 'edit' }"
+      class="sidebar-link"
+      :class="{ active: currentSection === 'edit' }"
+    >
+      <span class="sidebar-link__text">
+        {{ $t('title.edit_title') }}
+      </span>
     </router-link>
-  </div>
+
+    <router-link
+      :to="{ name: 'userdata' }"
+      class="sidebar-link"
+      :class="{ active: currentSection === 'userdata' }"
+    >
+      <span class="sidebar-link__text">
+        {{ $t('title.account_title') }}
+      </span>
+    </router-link>
+  </nav>
 </template>
 
 <script setup lang="ts">
@@ -25,32 +38,61 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
-const currentSection = computed(() => {
-  return route.name
-})
+const currentSection = computed(() => String(route.name ?? ''))
 </script>
 
 <style scoped lang="scss">
 .sidebar {
-  width: 250px;
+  width: 280px;
   display: flex;
   flex-direction: column;
-  margin-left: 20px;
-  align-self: center;
-  justify-content: center;
-  padding: 10px 10px;
-  border: 2px solid rgba(86, 86, 86, 0.34);
-  border-radius: 7px;
-  gap: 15px;
-  &-section {
-    border: 2px solid rgba(86, 86, 86, 0.34);
-    padding: 5px 7px;
-    border-radius: 10px;
-  }
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius-lg);
+  background: var(--sidebar-bg);
+  box-shadow: var(--card-shadow);
 }
-.active {
-  border-color: blueviolet;
+
+.sidebar-link {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: var(--sidebar-item-text);
+  background: transparent;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.sidebar-link:hover {
+  background: var(--sidebar-item-hover);
+  color: var(--icon-primary);
+}
+
+.sidebar-link:active {
+  transform: scale(0.99);
+}
+
+.sidebar-link__text {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.sidebar-link.active {
+  background: var(--sidebar-item-active);
+  color: var(--sidebar-item-text-active);
   font-weight: 600;
-  background-color: rgba(137, 43, 226, 0.222);
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 100%;
+  }
 }
 </style>

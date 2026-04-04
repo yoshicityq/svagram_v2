@@ -17,6 +17,10 @@ export const messages = {
       submit: 'Submit',
       sign_up: 'Sign up',
       sign_in: 'Sign in',
+      create_account: 'Create account',
+      back: 'Back',
+      entering: 'Entering...',
+      cancel: 'Cancel',
     },
     modals: {
       create_new_post: 'Creating a new post',
@@ -28,28 +32,48 @@ export const messages = {
       search: 'Search...',
       login: 'Login',
       password: 'Password',
+      username: 'Username',
+      city: 'City',
+      email: 'Email',
     },
-    registration: {
-      page_title: 'Registration',
-      enter_information: 'Please enter the required information',
+    password_strength: {
+      weak: 'Weak password',
+      medium: 'Medium password',
+      good: 'Good password',
+      strong: 'Strong password',
     },
+
+    title: {
+      reg_title: 'Registration',
+      system_title: 'System settings',
+      edit_title: 'Edit profile',
+      account_title: 'Account settings',
+      lang_title: 'Language',
+      theme_title: 'Theme',
+    },
+    description: {
+      reg_description: 'Please enter the required information',
+      system_description: 'Manage the interface status',
+      edit_description: 'Change the profile data',
+      acc_description: 'Manage your account security and privacy settings',
+      lang_description: 'Choose the interface language',
+      theme_description: 'Choose a theme of the application',
+    },
+
     profilePage: {
       posts_count: 'posts',
       city: 'City',
       description: 'Description',
       fav_brands: 'Favorite brands',
     },
-    systemSettings: {
-      page_title: 'System settings',
-      language: 'Language',
-      theme: 'Theme',
-    },
+
     editProfile: {
-      page_title: 'Edit profile',
       username: 'Username',
       description: 'Description',
       city: 'City',
       fav_brands: 'Favorite brands',
+      avatar: 'Profile avatar',
+      details: 'Profile details',
     },
     accountSettings: {
       title: 'Account settings',
@@ -63,11 +87,16 @@ export const messages = {
       accessory: 'Accessory',
       glasses: 'Glasses',
       bag: 'Bag',
-      default: 'Choose category',
+      default_category: 'Choose category',
+      default_brand: 'Choose brand',
     },
     helpers: {
       nothing_found: 'Nothing found',
       no_acc: "Don't have an account?",
+      sign_cont: 'Sign in to continue',
+      or: 'Or',
+      brands: 'Brands',
+      add_few_brands: 'Add one or more brand-category pairs for this post.',
     },
     validation: {
       required: 'This field is required',
@@ -76,6 +105,9 @@ export const messages = {
       email_not_valid: 'Email is not valid',
       password_length: 'Password must be at least 6 characters',
       username_length: 'Username must be at least 4 characters',
+      smth_wrong: 'Something went wrong',
+      invalid_credentials: 'Invalid credentials',
+      empty_fields: 'There ara empty fields',
     },
   },
   ru: {
@@ -96,6 +128,10 @@ export const messages = {
       submit: 'Отправить',
       sign_up: 'Зарегистрироваться',
       sign_in: 'Войти',
+      create_account: 'Создать аккаунт',
+      back: 'Назад',
+      entering: 'Входим...',
+      cancel: 'Отмена',
     },
     modals: {
       create_new_post: 'Создание нового поста',
@@ -107,10 +143,31 @@ export const messages = {
       search: 'Поиск...',
       login: 'Логин',
       password: 'Пароль',
+      username: 'Имя пользователя',
+      city: 'Город',
+      email: 'Почта',
     },
-    registration: {
-      page_title: 'Регистрация',
-      enter_information: 'Пожалуйста введите необходимую информацию',
+    password_strength: {
+      weak: 'Слабый пароль',
+      medium: 'Средний пароль',
+      good: 'Хороший пароль',
+      strong: 'Сильный пароль',
+    },
+    title: {
+      reg_title: 'Регистрация',
+      system_title: 'Системные настройки',
+      edit_title: 'Редактирование профиля',
+      account_title: 'Настройки аккаунта',
+      lang_title: 'Язык',
+      theme_title: 'Тема',
+    },
+    description: {
+      reg_description: 'Пожалуйста введите необходимую информацию',
+      system_description: 'Управляйте состоянием приложения',
+      edit_description: 'Измените личную информацию в профиле',
+      account_description: 'Управляйте безопасностью аккаунта и настройками приватности',
+      lang_description: 'Выберите язык интерфейса',
+      theme_description: 'Выберите тему приложения',
     },
     profilePage: {
       posts_count: 'постов',
@@ -118,21 +175,16 @@ export const messages = {
       description: 'Описание',
       fav_brands: 'Любимые бренды',
     },
-    systemSettings: {
-      page_title: 'Системные настройки',
-      language: 'Язык',
-      theme: 'Тема',
-    },
+
     editProfile: {
-      page_title: 'Редактирование профиля',
       username: 'Имя пользователя',
       description: 'Описание',
       city: 'Город',
       fav_brands: 'Любимые бренды',
+      avatar: 'Аватар профиля',
+      details: 'Детали профиляw',
     },
-    accountSettings: {
-      page_title: 'Настройки аккаунта',
-    },
+
     categories: {
       hat: 'Головной убор',
       bottom: 'Низ',
@@ -142,11 +194,16 @@ export const messages = {
       accessory: 'Аксессуар',
       glasses: 'Очки',
       bag: 'Сумка',
-      default: 'Выберите категорию',
+      default_category: 'Выберите категорию',
+      default_brand: 'Выберите бренд',
     },
     helpers: {
       nothing_found: 'Ничего не найдено',
       no_acc: 'Нет аккаунта?',
+      sign_cont: 'Войдите чтобы продолжить',
+      or: 'Или',
+      brands: 'Бренды',
+      add_few_brands: 'Добавьте одну или несколько категорий одежды к вашей публикации.',
     },
     validation: {
       required: 'Это поле обязательно',
@@ -155,6 +212,9 @@ export const messages = {
       email_not_valid: 'Неверный формат почты',
       password_length: 'Минимальная длина пароля 6 символов',
       username_length: 'Минимальная длина имени 4 сивола',
+      smth_wrong: 'Что-то пошло не так :(',
+      invalid_credentials: 'Неверные данные',
+      empty_fields: 'Есть незаполненные поля',
     },
   },
 }

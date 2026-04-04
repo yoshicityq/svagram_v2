@@ -8,7 +8,7 @@
           @click="isClickable ? toggleLike(postId) : undefined"
           class="icon"
         />
-        <span>{{ likes }}</span>
+        <span :class="{ marks_likes__disabled: !isClickable }">{{ likes }}</span>
       </div>
       <div class="marks_rating">
         <RatingIcon
@@ -17,11 +17,11 @@
           class="icon"
           :is-rated="myRating ? true : false"
         />
-        <span>{{ avgRating.toFixed(2) }}</span>
+        <span :class="{ marks_rating__disabled: !isClickable }">{{ avgRating.toFixed(2) }}</span>
         <span v-show="isClickable">({{ ratingsCount }})</span>
       </div>
     </div>
-    <div class="popover-wrapper">
+    <div class="popover-wrapper" ref="popoverRef">
       <PostRatingPopover v-if="isRatingOpen" :post-id="postId" @selected="handleRate" />
     </div>
   </div>
@@ -31,7 +31,7 @@
 import { apiFetch } from '@/api/apiFetch'
 import LikesIcon from '@/assets/icons/LikesIcon.vue'
 import RatingIcon from '@/assets/icons/RatingIcon.vue'
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import PostRatingPopover from '@/components/PostRatingPopover.vue'
 import { getPostLikes, getPostRating } from '@/api/apiData'
 import useModalStore from '@/stores/modals'
@@ -166,9 +166,11 @@ watch(
     display: flex;
     align-items: center;
     gap: 5px;
+
     span {
       font-size: 16px;
       font-weight: 600;
+      color: var(--text-secondary);
     }
   }
   &_rating {
@@ -178,6 +180,7 @@ watch(
     span {
       font-size: 16px;
       font-weight: 600;
+      color: var(--text-secondary);
     }
   }
 }
@@ -194,5 +197,11 @@ watch(
   position: absolute;
   width: 100%;
   top: 100%;
+  z-index: 2000;
+}
+
+.marks_likes__disabled,
+.marks_rating__disabled {
+  color: #e6e9f2 !important;
 }
 </style>

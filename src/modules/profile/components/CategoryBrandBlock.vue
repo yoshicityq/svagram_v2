@@ -44,6 +44,5 @@ function chooseBrand(brand: string) {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  margin-bottom: 10px;
 }
 </style>

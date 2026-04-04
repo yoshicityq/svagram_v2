@@ -28,6 +28,7 @@ async function getPosts() {
     }
     const data = await response.json()
     posts.value = data.posts
+    console.log(posts.value)
   } catch (e) {
     console.log(e)
   } finally {
@@ -54,6 +55,8 @@ onMounted(() => {
 .post-list {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 30px;
+  width: 100%;
 }
 </style>

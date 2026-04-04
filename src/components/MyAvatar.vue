@@ -48,7 +48,8 @@ watch(
   border: 1px solid #ccc;
   border-radius: 50%;
   overflow: hidden;
-  background-color: blueviolet;
+  background: #f6f2fd;
+
   position: relative;
 
   .avatar-img {
@@ -76,7 +77,7 @@ watch(
   height: 80px;
 }
 .avatar__large {
-  width: 200px;
-  height: 200px;
+  width: 150px;
+  height: 150px;
 }
 </style>

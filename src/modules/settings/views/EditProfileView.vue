@@ -1,75 +1,118 @@
 <template>
   <div class="edit-view">
     <div class="header">
-      <span class="header-title">{{ $t('editProfile.page_title') }}</span>
+      <div class="header-text">
+        <span class="header-title">{{ $t('title.edit_title') }}</span>
+        <span class="header-subtitle">{{ $t('description.edit_description') }}</span>
+      </div>
     </div>
 
     <div class="body">
-      <form @submit.prevent ref="form" class="body_form">
-        <div class="avatar-actions">
-          <label class="avatar" for="file">
-            <img class="avatar-img" :src="userAvatar" :class="{ preview: previewAvatar }" alt="" />
-          </label>
-          <input
-            ref="fileInput"
-            type="file"
-            id="file"
-            name="profile_img"
-            accept="image/*"
-            class="avatar-input"
-            @change="onFileChange"
-          />
+      <form @submit.prevent ref="form" class="edit-form">
+        <div class="edit-layout">
+          <aside class="profile-card avatar-card">
+            <div class="card-title">{{ $t('editProfile.avatar') }}</div>
 
-          <div class="btns">
-            <MyButton @click.prevent="openFileDialog">{{ $t('buttons.upload_avatar') }}</MyButton>
-            <MyButton>{{ $t('buttons.choose_from_posts') }}</MyButton>
-            <MyButton @click.prevent="deleteAvatar">{{ $t('buttons.delete_avatar') }}</MyButton>
-          </div>
-        </div>
+            <div class="avatar-preview-block">
+              <label class="avatar" for="file">
+                <img
+                  class="avatar-img"
+                  :src="userAvatar"
+                  :class="{ preview: previewAvatar }"
+                  alt=""
+                />
+              </label>
 
-        <div class="userdata">
-          <div class="stat">
-            <span class="stat-name">{{ $t('editProfile.username') }}</span>
-            <div class="stat-value">
-              <MyInput :placeholder="userData?.username!" style="width: 100%" />
+              <input
+                ref="fileInput"
+                type="file"
+                id="file"
+                name="profile_img"
+                accept="image/*"
+                class="avatar-input"
+                @change="onFileChange"
+              />
             </div>
-          </div>
 
-          <div class="stat">
-            <span class="stat-name">{{ $t('editProfile.description') }}</span>
-            <textarea
-              name="description"
-              v-model="description"
-              :placeholder="description ? '' : $t('placeholder.profile_description')"
-              class="description-text"
-            ></textarea>
-          </div>
+            <div class="avatar-actions">
+              <MyButton @click.prevent="openFileDialog">
+                {{ $t('buttons.upload_avatar') }}
+              </MyButton>
 
-          <div class="stat">
-            <span class="stat-name">City</span>
-            <CitySelect :user-city="userData?.city" v-model="chosenCity" name="city" />
-          </div>
+              <MyButton>
+                {{ $t('buttons.choose_from_posts') }}
+              </MyButton>
 
-          <div class="stat">
-            <span class="stat-name">{{ $t('editProfile.fav_brands') }}</span>
+              <MyButton @click.prevent="deleteAvatar">
+                {{ $t('buttons.delete_avatar') }}
+              </MyButton>
+            </div>
+          </aside>
 
-            <div class="add-brand">
-              <div v-for="(brand, index) in favoriteBrands" :key="index" class="brand-row">
-                <BrandSelect :model-value="brand" @update:modelValue="updateBrand(index, $event)" />
+          <section class="profile-card details-card">
+            <div class="card-title">{{ $t('editProfile.details') }}</div>
 
-                <MyButton v-if="favoriteBrands.length > 1" @click.prevent="removeBrand(index)">
-                  -
-                </MyButton>
+            <div class="userdata">
+              <div class="field">
+                <label class="field-label">{{ $t('editProfile.username') }}</label>
+                <div class="field-control">
+                  <MyInput :placeholder="userData?.username!" style="width: 100%" />
+                </div>
               </div>
 
-              <MyButton @click.prevent="addBrandSelect">+</MyButton>
+              <div class="field">
+                <label class="field-label">{{ $t('editProfile.description') }}</label>
+                <div class="field-control">
+                  <textarea
+                    name="description"
+                    v-model="description"
+                    :placeholder="description ? '' : $t('placeholder.profile_description')"
+                    class="description-text"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="field-label">{{ $t('editProfile.city') }}</label>
+                <div class="field-control">
+                  <CitySelect :user-city="userData?.city" v-model="chosenCity" name="city" />
+                </div>
+              </div>
+
+              <div class="field field--brands">
+                <label class="field-label">{{ $t('editProfile.fav_brands') }}</label>
+
+                <div class="field-control">
+                  <div class="add-brand">
+                    <div v-for="(brand, index) in favoriteBrands" :key="index" class="brand-row">
+                      <BrandSelect
+                        :model-value="brand"
+                        @update:modelValue="updateBrand(index, $event)"
+                      />
+
+                      <MyButton
+                        v-if="favoriteBrands.length > 1"
+                        @click.prevent="removeBrand(index)"
+                      >
+                        -
+                      </MyButton>
+                    </div>
+
+                    <div class="brand-actions">
+                      <MyButton @click.prevent="addBrandSelect">+</MyButton>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
         </div>
 
-        <MyButton color="primary" class="submit_btn" @click="sendData">{{
-          $t('buttons.save')
-        }}</MyButton>
+        <div class="form-footer">
+          <MyButton color="primary" class="submit-btn" @click="sendData">
+            {{ $t('buttons.save') }}
+          </MyButton>
+        </div>
       </form>
     </div>
   </div>
@@ -84,7 +127,6 @@ import { computed, ref, useTemplateRef, watch } from 'vue'
 import noAvatar from '@/assets/images/no_avatar.png'
 import useAuthStore from '@/stores/auth'
 import { apiFetch } from '@/api/apiFetch'
-import MyAvatar from '@/components/MyAvatar.vue'
 import type { User } from '@/types/user'
 import { getProfileData, getProfileImg } from '@/api/apiData'
 
@@ -120,8 +162,11 @@ async function deleteAvatar() {
     method: 'DELETE',
     credentials: 'include',
   })
-  const data = await response.json()
-  console.log(data)
+  const user = userData.value
+  if (user) {
+    user.hasAvatar = false
+    user.avatarUrl = ''
+  }
 }
 
 function cleanupPreview() {
@@ -216,69 +261,106 @@ watch(
 
 <style scoped lang="scss">
 .edit-view {
-  flex: 1;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .header {
-  border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-primary);
+  padding-bottom: 16px;
+}
 
-  .header-title {
-    font-size: 40px;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.header-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text-primary);
+}
+
+.header-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
 }
 
 .body {
+  width: 100%;
+  padding-right: 20px;
+}
+
+.edit-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.edit-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.profile-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--card-shadow);
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 18px;
+}
+
+.avatar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.avatar-preview-block {
   display: flex;
   justify-content: center;
 }
 
-.body_form {
-  margin-top: 20px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: fit-content;
-}
-
-.avatar-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  border: 1px solid blueviolet;
-  border-radius: 7px;
-  padding: 15px;
-  width: 400px;
-  justify-content: space-between;
-
-  .btns {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-}
-
 .avatar {
-  width: 175px;
-  height: 175px;
-  border: 1px solid #ccc;
+  width: 180px;
+  height: 180px;
+  border: 1px solid var(--accent-border);
   border-radius: 50%;
   overflow: hidden;
-  background-color: blueviolet;
+  background: var(--bg-surface-secondary);
   position: relative;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px var(--accent-soft);
+}
 
-  .avatar-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 20px;
-    left: 2px;
-    right: 0;
-    bottom: 0;
-  }
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 20px;
+  left: 2px;
+  right: 0;
+  bottom: 0;
 }
 
 .preview {
@@ -290,69 +372,144 @@ watch(
   display: none;
 }
 
-.userdata {
+.avatar-actions {
   display: flex;
   flex-direction: column;
-  margin-top: 20px;
-  border: 1px solid blueviolet;
-  width: 100%;
-  max-width: 400px;
-  padding: 15px;
-  border-radius: 7px;
   gap: 10px;
 }
 
-.stat {
+.details-card {
+  min-width: 0;
+}
+
+.userdata {
   display: flex;
-  gap: 20px;
-  width: 100%;
-
-  &-name {
-    width: 150px !important;
-  }
-
-  &-value {
-    width: 100%;
-    max-width: 200px;
-  }
+  flex-direction: column;
+  gap: 18px;
 }
 
-.city-select {
-  width: 100%;
-  max-width: 200px;
+.field {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
 }
 
-.submit_btn {
-  margin-top: 20px;
+.field-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-top: 10px;
+}
+
+.field-control {
+  min-width: 0;
 }
 
 .description-text {
-  min-width: 200px;
-  min-height: 75px;
-  padding: 3px;
-  font-size: 13px;
-  resize: none;
-  border: 2px solid rgba(86, 86, 86, 0.34);
-  border-radius: 3px;
+  width: 100%;
+  min-height: 110px;
+  padding: 12px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  resize: vertical;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.description-text::placeholder {
+  color: var(--input-placeholder);
+}
+
+.description-text:hover {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
 }
 
 .description-text:focus {
   outline: none;
-  border: 2px solid blueviolet;
-  border-radius: 3px;
+  border-color: var(--input-border-active);
+  box-shadow: var(--focus-ring);
 }
 
 .add-brand {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  max-width: 200px;
 }
 
 .brand-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
+}
+
+.brand-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submit-btn {
+  min-width: 180px;
+}
+
+@media (max-width: 920px) {
+  .edit-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .avatar-card {
+    align-items: center;
+  }
+
+  .avatar-actions {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 700px) {
+  .edit-view {
+    padding: 18px 12px 28px;
+  }
+
+  .header-title {
+    font-size: 28px;
+  }
+
+  .profile-card {
+    border-radius: var(--radius-lg);
+    padding: 16px;
+  }
+
+  .field {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .field-label {
+    padding-top: 0;
+  }
+
+  .form-footer {
+    justify-content: stretch;
+  }
+
+  .submit-btn {
+    width: 100%;
+  }
 }
 </style>

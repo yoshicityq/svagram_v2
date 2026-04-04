@@ -1,42 +1,81 @@
 <template>
   <Teleport to="#portal">
-    <div v-show="modalStore.isCreateDialogOpen" class="dialog-wrapper">
-      <form ref="form" @submit.prevent="publishPost" class="post-dialog">
-        <div class="header">
-          <span>{{ $t('modals.create_new_post') }}</span>
-          <CrossIcon class="icon" @click="closeWindow" />
-        </div>
-        <div class="body">
-          <div class="photo-download">
-            <label for="file">
-              <img v-if="previewUrl" :src="previewUrl" alt="preview" />
-              <span v-else>{{ $t('modals.upload_photo') }}</span>
-            </label>
+    <div v-show="modalStore.isCreateDialogOpen" class="dialog-overlay" @click.self="closeWindow">
+      <form ref="form" @submit.prevent="publishPost" class="dialog-card">
+        <div class="dialog-header">
+          <h2 class="dialog-title">{{ $t('modals.create_new_post') }}</h2>
 
-            <input id="file" type="file" accept="image/*" name="image" @change="onFileChange" />
+          <button type="button" class="icon-button" @click="closeWindow" aria-label="Close dialog">
+            <CrossIcon class="icon" />
+          </button>
+        </div>
+
+        <div class="dialog-body">
+          <div class="dialog-column dialog-column--left">
+            <div class="upload-section">
+              <label for="file" class="upload-area">
+                <img v-if="previewUrl" :src="previewUrl" alt="preview" class="upload-preview" />
+                <div v-else class="upload-placeholder">
+                  <span class="upload-title">{{ $t('modals.upload_photo') }}</span>
+                  <span class="upload-subtitle">JPG, PNG, WEBP</span>
+                </div>
+              </label>
+
+              <input id="file" type="file" accept="image/*" name="image" @change="onFileChange" />
+            </div>
           </div>
-          <div>
-            <div class="photo-description">
+
+          <div class="dialog-column dialog-column--right">
+            <div class="form-section">
+              <label class="section-label" for="description">
+                {{ $t('placeholder.photo_capture') }}
+              </label>
+
               <textarea
+                id="description"
                 name="description"
+                class="text-input"
                 :placeholder="$t('placeholder.photo_capture')"
               ></textarea>
             </div>
-            <div class="add_brands">
-              <div v-for="(brand, index) in addedBrands" :key="index" class="block-row">
-                <CategoryBrandBlock
-                  :category-obj="brand"
-                  @update:category-name="updateCategoryName(index, $event)"
-                  @update:category-val="updateCategoryBrand(index, $event)"
-                />
-                <MyButton @click.prevent="removeBlock(index)"> - </MyButton>
+
+            <div class="form-section brands-section">
+              <div class="section-head">
+                <span class="section-label">{{ $t('buttons.add_brand') }}</span>
+                <MyButton type="button" @click="addBlock">
+                  {{ $t('buttons.add_brand') }}
+                </MyButton>
               </div>
-              <MyButton type="button" @click="addBlock">{{ $t('buttons.add_brand') }}</MyButton>
+
+              <div v-if="addedBrands.length" class="brands-list">
+                <div
+                  v-for="(brand, index) in addedBrands"
+                  :key="brand.id ?? index"
+                  class="brand-row"
+                >
+                  <CategoryBrandBlock
+                    :category-obj="brand"
+                    @update:category-name="updateCategoryName(index, $event)"
+                    @update:category-val="updateCategoryBrand(index, $event)"
+                  />
+                  <MyButton type="button" class="remove-btn" @click.prevent="removeBlock(index)">
+                    −
+                  </MyButton>
+                </div>
+              </div>
+
+              <div v-else class="brands-empty">
+                {{ $t('helpers.add_few_brands') }}
+              </div>
             </div>
           </div>
         </div>
-        <div class="footer">
-          <MyButton type="submit">{{ $t('buttons.share') }}</MyButton>
+
+        <div class="dialog-footer">
+          <MyButton type="button" @click="closeWindow"> {{ $t('buttons.cancel') }} </MyButton>
+          <MyButton type="submit">
+            {{ $t('buttons.share') }}
+          </MyButton>
         </div>
       </form>
     </div>
@@ -169,141 +208,281 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
-.dialog-wrapper {
+.dialog-overlay {
   position: fixed;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  inset: 0;
   z-index: 21;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(4px);
 }
-.post-dialog {
-  width: 600px;
-  height: auto;
-  background-color: #fff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+.dialog-card {
+  width: min(960px, 100%);
+  max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
-  padding: 10px;
-  align-items: center;
-  border: 2px solid blueviolet;
-  border-radius: 10px;
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
 }
-.header {
-  width: 100%;
-  height: 50px;
-  border-bottom: 1px solid blueviolet;
+
+.dialog-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 20px;
-  font-weight: 500;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--card-bg);
+}
 
-  span {
-    margin-left: auto;
-    margin-right: auto;
+.dialog-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.icon-button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    background: var(--sidebar-item-hover);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
   }
 
   .icon {
-    cursor: pointer;
-    width: 15px;
+    width: 16px;
+    height: 16px;
+    color: var(--icon-primary);
   }
 }
-.body {
+
+.dialog-body {
   flex: 1;
-  width: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(320px, 1fr);
+  gap: 24px;
+  padding: 20px;
+  overflow: auto;
+}
+
+.dialog-column {
+  min-width: 0;
+}
+
+.dialog-column--left {
   display: flex;
-  align-items: start;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 20px;
-  margin-top: 20px;
 }
-.photo-download {
-  width: 100%;
-  label {
-    width: 100%;
-    height: 300px;
-    border: 2px dashed #c0c0c0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #a0a0a0;
-    font-size: 18px;
-    cursor: pointer;
-  }
 
-  input {
-    display: none;
-  }
-}
-.photo-description {
-  width: 100%;
-  textarea {
-    min-width: 200px;
-    min-height: 75px;
-    border: 1px solid #c0c0c0;
-    border-radius: 7px;
-    padding: 5px;
-    font-size: 13px;
-    resize: none;
-  }
-  textarea:focus {
-    outline: none;
-    border-color: #808080;
-  }
-}
-.photo-download {
-  width: 100%;
-
-  label {
-    width: 100%;
-    height: 300px;
-    border: 2px dashed #c0c0c0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #a0a0a0;
-    font-size: 18px;
-    cursor: pointer;
-    overflow: hidden; // чтобы картинка не вылезала
-  }
-
-  label img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; // красиво заполняет область
-    display: block;
-  }
-
-  input {
-    display: none;
-  }
-}
-.photo-brands {
-  width: 100%;
+.dialog-column--right {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  flex-wrap: wrap;
-  .brand-select {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    font-size: 14px;
-    span {
-      font-weight: 500;
-    }
-  }
+  gap: 20px;
 }
-.add_brands {
+
+.upload-section {
   width: 100%;
 }
-.block-row {
+
+.upload-area {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed var(--accent-border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-secondary);
   display: flex;
-  gap: 8px;
   align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    border-color: var(--accent);
+    background: var(--bg-surface-tertiary);
+  }
+}
+
+.upload-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px;
+  text-align: center;
+}
+
+.upload-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.upload-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+input[type='file'] {
+  display: none;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.text-input {
+  width: 100%;
+  min-height: 75px;
+  padding: 12px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  resize: vertical;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+
+  &::placeholder {
+    color: var(--input-placeholder);
+  }
+
+  &:hover {
+    background: var(--input-bg-hover);
+    border-color: var(--input-border-hover);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--input-border-active);
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.brands-section {
+  flex: 1;
+  min-height: 0;
+}
+
+.brands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 280px;
+  padding-right: 4px;
+}
+
+.brand-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-secondary);
+}
+
+.remove-btn {
+  min-width: 40px;
+  height: 40px;
+  align-self: center;
+}
+
+.brands-empty {
+  padding: 16px;
+  border: 1px dashed var(--accent-border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-secondary);
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px 20px;
+  border-top: 1px solid var(--border-primary);
+  background: var(--card-bg);
+}
+
+@media (max-width: 860px) {
+  .dialog-card {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    border-radius: var(--radius-lg);
+  }
+
+  .dialog-overlay {
+    padding: 12px;
+  }
+
+  .dialog-body {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .upload-area {
+    aspect-ratio: 16 / 10;
+  }
+
+  .brands-list {
+    max-height: 220px;
+  }
 }
 </style>
