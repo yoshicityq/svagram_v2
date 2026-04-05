@@ -89,11 +89,6 @@ function handleClickOutside(event: MouseEvent) {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-
-  const storageLang = localStorage.getItem('lang')
-  if (typeof storageLang === 'string') {
-    locale.value = storageLang
-  }
 })
 
 onBeforeUnmount(() => {

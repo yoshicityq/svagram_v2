@@ -62,13 +62,13 @@
                 <div class="user-top-row">
                   <span class="username">{{ username }}</span>
 
-                  <div v-if="userData?.city" class="meta-chip">
+                  <div v-if="userProfileData?.city" class="meta-chip">
                     <LocationIcon class="meta-chip-icon" />
-                    <span>{{ userData.city }}</span>
+                    <span>{{ userProfileData.city }}</span>
                   </div>
                 </div>
-                <span v-if="userData?.description" class="user-description">
-                  {{ userData.description }}
+                <span v-if="userProfileData?.description" class="user-description">
+                  {{ userProfileData.description }}
                 </span>
               </div>
               <div class="user-meta-row">
@@ -76,16 +76,16 @@
                   <PostsIcon class="meta-item-icon" />
                   <span>{{ postsQuantity }} {{ $t('profilePage.posts_count') }}</span>
                 </div>
-                <div v-if="userData?.favorite_brands" class="meta-item">
+                <div v-if="userProfileData?.favorite_brands" class="meta-item">
                   <FavBrandsIcon class="meta-item-icon" />
-                  <span>{{ userData.favorite_brands }}</span>
+                  <span>{{ userProfileData.favorite_brands }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div v-if="authStore.user?.username === username" class="actions-block">
+        <div v-if="userPermissionData?.isOwner" class="actions-block">
           <MyButton @click="modalStore.toggleCreateDialog()" class="action-btn">
             <svg
               class="action-btn-icon"
@@ -124,25 +124,25 @@
       </div>
 
       <nav class="navigation-block">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          class="nav-tab"
-          :class="{ 'nav-tab--active': activeTab === tab.id }"
-          @click="activeTab = tab.id"
-        >
-          <component
-            :is="tab.icon"
-            class="nav-tab-icon"
-            :is-liked="tab.id === 'likes' ? false : undefined"
-            :is-section-btn="tab.id === 'likes' ? true : undefined"
-          />
-        </button>
+        <div v-for="tab in workableTabs" :key="tab.id">
+          <button
+            class="nav-tab"
+            :class="{ 'nav-tab__active': activeTab === tab.id }"
+            @click="navigateTabs(tab)"
+          >
+            <component
+              :is="tab.icon"
+              class="nav-tab-icon"
+              :is-liked="tab.id === 'likes' ? false : undefined"
+              :is-section-btn="tab.id === 'likes' ? true : undefined"
+            />
+          </button>
+        </div>
       </nav>
     </div>
 
     <div class="body">
-      <PostList :username="username" @posts-quantity="getLength" />
+      <router-view />
     </div>
   </div>
 
@@ -155,7 +155,7 @@ import MyButton from '@/components/UI/MyButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import useModalStore from '@/stores/modals'
 import PostList from '../components/PostList.vue'
-import { ref, watch } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import CreatePostDialog from '../components/CreatePostDialog.vue'
 import OpenPostDialog from '../components/OpenPostDialog.vue'
 import MyAvatar from '@/components/MyAvatar.vue'
@@ -175,17 +175,42 @@ const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const username = ref(route.params.username as string)
-
-const userData = ref<User | null>(null)
+type Permission = {
+  isOwner: Boolean
+  canViewPosts: Boolean
+  canViewLikedPosts: Boolean
+  canViewRatedPosts: Boolean
+}
+const userProfileData = ref<User | null>(null)
+const userPermissionData = ref<Permission | null>(null)
 const isLoading = ref(true)
 const isNotFound = ref(false)
 const activeTab = ref('posts')
-
-const tabs = [
-  { id: 'posts', icon: PostsIcon, label: t('profilePage.tab_posts') },
-  { id: 'likes', icon: LikesIcon, label: t('profilePage.tab_likes') },
-  { id: 'estimated', icon: EstimatedPostsIcon, label: t('profilePage.tab_estimated') },
+type Tab = {
+  id: string
+  icon: Component
+  path: string
+}
+const tabs: Tab[] = [
+  { id: 'posts', icon: PostsIcon, path: 'Profile posts' },
+  { id: 'likes', icon: LikesIcon, path: 'Liked posts' },
+  { id: 'estimated', icon: EstimatedPostsIcon, path: 'Rated posts' },
 ]
+
+const workableTabs = computed(() => {
+  return tabs.filter((tab) => {
+    if (!userPermissionData.value?.isOwner) {
+      if (tab.id === 'likes' && userPermissionData.value?.canViewLikedPosts) return tab
+      if (tab.id === 'estimated' && userPermissionData.value?.canViewRatedPosts) return tab
+      if (tab.id === 'posts') return tab
+    } else return tab
+  })
+})
+
+function navigateTabs(tab: Tab) {
+  activeTab.value = tab.id
+  router.push({ name: tab.path })
+}
 
 const postsQuantity = ref(0)
 const getLength = (data: number) => (postsQuantity.value = data)
@@ -220,7 +245,8 @@ watch(
     try {
       const data = await getProfileData(newVal as string)
       if (data) {
-        userData.value = data
+        userProfileData.value = data.user
+        userPermissionData.value = data.permissions
       } else {
         isNotFound.value = true
       }
@@ -366,46 +392,30 @@ watch(
 }
 
 .nav-tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 20px;
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  cursor: pointer;
   position: relative;
   transition: color 0.2s ease;
-}
+  background: none;
+  border: none;
+  padding: 12px 20px 5px 20px;
+  cursor: pointer;
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 24px;
+    height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transform: translateX(-50%) scaleX(0);
+    transition: transform 0.2s ease;
+  }
 
-.nav-tab::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%) scaleX(0);
-  width: 100%;
-  height: 2px;
-  background: var(--primary);
-  border-radius: 2px 2px 0 0;
-  transition: transform 0.25s ease;
-}
-
-.nav-tab:hover {
-  color: var(--text-primary);
-}
-
-.nav-tab--active {
-  color: var(--text-primary);
-}
-
-.nav-tab--active::after {
-  transform: translateX(-50%) scaleX(1);
+  &__active {
+    &::after {
+      transform: translateX(-50%) scaleX(1);
+    }
+  }
 }
 
 .nav-tab-icon {

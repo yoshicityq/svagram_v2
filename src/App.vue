@@ -10,16 +10,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeMount } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import useAuthStore from './stores/auth'
 import { useSettingsStore } from './stores/settings'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const settingsStore = useSettingsStore()
 const layout = computed(() => route.meta.layout)
 const theme = computed(() => {
   return settingsStore.isLightTheme ? 'light-theme' : 'dark-theme'
+})
+const { locale } = useI18n()
+
+onBeforeMount(() => {
+  const storageLang = localStorage.getItem('lang')
+  if (typeof storageLang === 'string') {
+    locale.value = storageLang
+  }
 })
 </script>
 

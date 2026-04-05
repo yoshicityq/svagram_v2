@@ -16,7 +16,10 @@ db.serialize(() => {
     img_mimetype CHAR(16),
     city TEXT NOT NULL,
     description TEXT,
-    favorite_brands TEXT)
+    favorite_brands TEXT,
+    is_private INTEGER NOT NULL DEFAULT 0,
+    liked_posts_visibility TEXT NOT NULL DEFAULT 'public',
+    rated_posts_visibility TEXT NOT NULL DEFAULT 'public')
 `
   const sql_posts = `
     CREATE TABLE IF NOT EXISTS posts 
@@ -26,7 +29,7 @@ db.serialize(() => {
       img BLOB NOT NULL,
       img_mimetype CHAR(16) NOT NULL,
       likes integer,
-      people_liked TEXT NOT NULL,
+      people_liked TEXT,
       brand_accessory TEXT,
       brand_hat TEXT NOT NULL,
       brand_outwear TEXT NOT NULL,
@@ -147,6 +150,9 @@ class User {
       'favorite_brands',
       'profile_img',
       'img_mimetype',
+      'is_private',
+      'liked_posts_visibility',
+      'rated_posts_visibility',
     ]
 
     const entries = Object.entries(patch).filter(([k, v]) => allowed.includes(k) && v !== undefined)
@@ -166,15 +172,43 @@ class User {
     const sql = `SELECT profile_img, img_mimetype FROM users WHERE username = ?`
     db.get(sql, username, cb)
   }
-  static findPublicByUsername(username, cb) {
+  // static findPublicByUsername(username, cb) {
+  //   const sql = `
+  //   SELECT id, username, city, description, favorite_brands, img_mimetype
+  //   FROM users
+  //   WHERE username = ?
+  // `
+  //   db.get(sql, username, cb)
+  // }
+  static findProfileByUsername(username, cb) {
     const sql = `
-    SELECT id, username, city, description, favorite_brands, img_mimetype
+    SELECT
+      id,
+      username,
+      city,
+      description,
+      favorite_brands,
+      img_mimetype,
+      COALESCE(is_private, 0) AS is_private,
+      COALESCE(liked_posts_visibility, 'public') AS liked_posts_visibility,
+      COALESCE(rated_posts_visibility, 'public') AS rated_posts_visibility
     FROM users
     WHERE username = ?
   `
     db.get(sql, username, cb)
   }
-
+  static findPrivacyById(id, cb) {
+    const sql = `
+    SELECT
+      id,
+      COALESCE(is_private, 0) AS is_private,
+      COALESCE(liked_posts_visibility, 'public') AS liked_posts_visibility,
+      COALESCE(rated_posts_visibility, 'public') AS rated_posts_visibility
+    FROM users
+    WHERE id = ?
+  `
+    db.get(sql, id, cb)
+  }
   static clearAvatarById(userId, cb) {
     const sql = 'UPDATE users SET profile_img = NULL, img_mimetype = NULL WHERE id = ?'
     db.run(sql, userId, function (err) {
@@ -281,7 +315,92 @@ class Post {
   `
     db.all(sql, userId, username, limit, offset, cb)
   }
+  static listLikedByUsername(username, { viewerUserId = null, limit = 20, offset = 0 } = {}, cb) {
+    const sql = `
+    SELECT
+      p.id,
+      p.user,
+      p.description,
+      p.brand_accessory,
+      p.brand_hat,
+      p.brand_outwear,
+      p.brand_top,
+      p.brand_bottom,
+      p.brand_shoes,
+      p.brand_bag,
+      p.brand_glasses,
+      p.img_mimetype,
+      COALESCE(lc.likes, 0) AS likes,
+      CASE WHEN vpl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
+    FROM post_likes target_like
+    JOIN users u
+      ON u.id = target_like.user_id
+    JOIN posts p
+      ON p.id = target_like.post_id
+    LEFT JOIN (
+      SELECT post_id, COUNT(*) AS likes
+      FROM post_likes
+      GROUP BY post_id
+    ) lc
+      ON lc.post_id = p.id
+    LEFT JOIN post_likes vpl
+      ON vpl.post_id = p.id AND vpl.user_id = ?
+    WHERE u.username = ?
+    ORDER BY target_like.created_at DESC, p.id DESC
+    LIMIT ? OFFSET ?
+  `
 
+    db.all(sql, viewerUserId, username, limit, offset, cb)
+  }
+  static listRatedByUsername(username, { viewerUserId = null, limit = 20, offset = 0 } = {}, cb) {
+    const sql = `
+    SELECT
+      p.id,
+      p.user,
+      p.description,
+      p.brand_accessory,
+      p.brand_hat,
+      p.brand_outwear,
+      p.brand_top,
+      p.brand_bottom,
+      p.brand_shoes,
+      p.brand_bag,
+      p.brand_glasses,
+      p.img_mimetype,
+      COALESCE(lc.likes, 0) AS likes,
+      CASE WHEN vpl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe,
+      target_rating.rating AS userRating,
+      COALESCE(rm.avgRating, 0) AS avgRating,
+      COALESCE(rm.ratingsCount, 0) AS ratingsCount
+    FROM post_ratings target_rating
+    JOIN users u
+      ON u.id = target_rating.user_id
+    JOIN posts p
+      ON p.id = target_rating.post_id
+    LEFT JOIN (
+      SELECT post_id, COUNT(*) AS likes
+      FROM post_likes
+      GROUP BY post_id
+    ) lc
+      ON lc.post_id = p.id
+    LEFT JOIN post_likes vpl
+      ON vpl.post_id = p.id AND vpl.user_id = ?
+    LEFT JOIN (
+      SELECT
+        post_id,
+        ROUND(AVG(rating), 2) AS avgRating,
+        COUNT(*) AS ratingsCount
+      FROM post_ratings
+      GROUP BY post_id
+    ) rm
+      ON rm.post_id = p.id
+    WHERE u.username = ?
+    ORDER BY target_rating.updated_at DESC, p.id DESC
+    LIMIT ? OFFSET ?
+  `
+
+    db.all(sql, viewerUserId, username, limit, offset, cb)
+  }
   static findMetaById(id, userId, cb) {
     const sql = `
     SELECT
