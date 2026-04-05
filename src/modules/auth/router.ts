@@ -4,7 +4,7 @@ const router = {
   path: '/auth',
   name: 'Authorization',
   meta: {
-    title: 'Вход',
+    title: 'document_title.auth',
     layout: AuthLayout,
     requiresAuth: false,
   },

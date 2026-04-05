@@ -57,8 +57,17 @@
         <circle cx="8.5" cy="8.5" r="1.5" />
         <polyline points="21 15 16 10 5 21" />
       </svg>
-      <p class="empty-state-title">{{ $t('postList.empty_title') }}</p>
-      <p class="empty-state-text">{{ $t('postList.empty_hint') }}</p>
+
+      <p class="empty-state-title">{{ $t('title.empty_posts_list_title') }}</p>
+      <p class="empty-state-text">
+        {{
+          listType === ''
+            ? $t('description.empty_posts_list_description')
+            : listType === 'liked'
+              ? $t('description.empty_liked_list_description')
+              : $t('description.empty_rated_list_description')
+        }}
+      </p>
     </div>
 
     <!-- Posts grid -->
@@ -78,12 +87,16 @@
 import { ref, watch } from 'vue'
 import PostCard from './PostCard.vue'
 import type { Post } from '@/types/post'
-import { getUserPosts } from '@/api/apiData'
+import { getUserLikedPosts, getUserPosts, getUserRatedPosts } from '@/api/apiData'
 import MyLoader from '@/components/MyLoader.vue'
 
-const props = defineProps<{
-  username: string
-}>()
+const props = defineProps({
+  username: String,
+  listType: {
+    type: String,
+    default: '',
+  },
+})
 
 const emits = defineEmits<{
   postsQuantity: [count: number]
@@ -100,8 +113,18 @@ async function fetchPosts() {
   hasError.value = false
 
   try {
-    const data = await getUserPosts(props.username)
-    posts.value = data ?? []
+    if (props.listType === 'rated') {
+      const data = await getUserRatedPosts(props.username)
+      posts.value = data ?? []
+    }
+    if (props.listType === 'liked') {
+      const data = await getUserLikedPosts(props.username)
+      posts.value = data ?? []
+    }
+    if (props.listType === '') {
+      const data = await getUserPosts(props.username)
+      posts.value = data ?? []
+    }
     emits('postsQuantity', posts.value.length)
   } catch (e) {
     console.error(e)
@@ -112,7 +135,7 @@ async function fetchPosts() {
   }
 }
 
-watch(() => props.username, fetchPosts, { immediate: true })
+watch(() => props, fetchPosts, { immediate: true, deep: true })
 </script>
 
 <style scoped lang="scss">

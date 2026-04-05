@@ -4,7 +4,7 @@ const router = {
   path: '/reg',
   name: 'Registration',
   meta: {
-    title: 'Регистрация',
+    title: 'document_title.reg',
     layout: AuthLayout,
     requiresAuth: false,
   },

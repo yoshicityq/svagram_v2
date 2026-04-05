@@ -7,7 +7,7 @@
       { 'my-button--icon-only': icon && !isSidebarOpened },
     ]"
   >
-    <component :is="icon" v-if="icon" class="my-button__icon" />
+    <component :is="icon" v-if="icon" class="my-button__icon" :class="{ active: active }" />
     <span v-if="isSidebarOpened" class="my-button__label">
       <slot />
     </span>
@@ -32,6 +32,10 @@ defineProps({
   size: {
     type: String,
     default: 's',
+  },
+  active: {
+    type: Boolean,
+    default: false,
   },
 })
 </script>
@@ -90,6 +94,11 @@ defineProps({
   flex-shrink: 0;
   width: 18px;
   height: 18px;
+  transition: transform 0.25s ease;
+}
+
+.my-button__icon.active {
+  transform: rotate(180deg);
 }
 
 .my-button__label {
@@ -148,6 +157,19 @@ defineProps({
   background: var(--button-ghost-bg-active);
 }
 
+.my-button--danger {
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.my-button--danger:hover {
+  background: var(--danger-soft);
+}
+.my-button--danger:active {
+  background: var(--danger-soft);
+}
 /* sizes */
 .my-button--xs {
   min-height: 32px;

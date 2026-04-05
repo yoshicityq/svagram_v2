@@ -5,7 +5,7 @@ const router = {
   name: 'Feed',
   meta: {
     layout: MainLayout,
-    title: 'Лента',
+    title: 'document_title.feed',
     requiresAuth: true,
   },
   component: () => import('@/modules/feed/views/FeedView.vue'),

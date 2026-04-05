@@ -230,7 +230,9 @@ async function sendData() {
 
   if (response.ok) {
     alert('Данные обновились успешно')
-    userData.value = await getProfileData(authStore.user?.username as string)
+    const data = await getProfileData(authStore.user?.username as string)
+
+    if (data) userData.value = data?.user
     previewAvatar.value = await getProfileImg(authStore.user?.username as string)
 
     if (userData.value) {
@@ -245,7 +247,8 @@ watch(
   () => userData.value,
   async () => {
     if (!userData.value) {
-      userData.value = await getProfileData(authStore.user?.username as string)
+      const data = await getProfileData(authStore.user?.username as string)
+      if (data) userData.value = data.user
       previewAvatar.value = await getProfileImg(authStore.user?.username as string)
 
       if (userData.value) {

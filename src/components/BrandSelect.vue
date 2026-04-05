@@ -182,7 +182,7 @@ const clothingBrands = [
 .brand-select {
   position: relative;
   width: 100%;
-  max-width: 220px;
+  // max-width: 220px;
 }
 
 .field {

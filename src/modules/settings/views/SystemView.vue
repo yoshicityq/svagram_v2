@@ -27,7 +27,7 @@
           </div>
 
           <div class="setting-control">
-            <ThemeSwitcher v-model="theme" />
+            <MySwitcher v-model="theme" :left-icon="SunIcon" :right-icon="MoonIcon" />
           </div>
         </div>
 
@@ -62,8 +62,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import LanguageSelect from '../components/LanguageSelect.vue'
-import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import { useSettingsStore } from '@/stores/settings'
+import MySwitcher from '@/components/UI/MySwitcher.vue'
+import MoonIcon from '@/assets/icons/MoonIcon.vue'
+import SunIcon from '@/assets/icons/SunIcon.vue'
 
 const settingsStore = useSettingsStore()
 const theme = computed({
@@ -72,6 +74,7 @@ const theme = computed({
   },
   set(val) {
     settingsStore.isLightTheme = val
+    localStorage.setItem('isLightTheme', val ? 'light' : 'dark')
   },
 })
 </script>

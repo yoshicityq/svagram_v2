@@ -247,9 +247,15 @@ app.get('/users/search/:prefix', authRequired, (req, res, next) => {
 app.get('/users/:username', authRequired, (req, res, next) => {
   const username = req.params.username
 
-  User.findPublicByUsername(username, (err, user) => {
+  User.findProfileByUsername(username, (err, user) => {
     if (err) return next(err)
     if (!user) return res.status(404).json({ message: 'User not found' })
+
+    const isOwner = req.user.id === user.id
+
+    const canViewPosts = isOwner || !user.is_private
+    const canViewLikedPosts = isOwner || user.liked_posts_visibility === 'public'
+    const canViewRatedPosts = isOwner || user.rated_posts_visibility === 'public'
 
     return res.json({
       user: {
@@ -261,6 +267,19 @@ app.get('/users/:username', authRequired, (req, res, next) => {
         hasAvatar: !!user.img_mimetype,
         avatarUrl: user.img_mimetype ? `/users/${user.username}/avatar` : null,
       },
+      permissions: {
+        isOwner,
+        canViewPosts,
+        canViewLikedPosts,
+        canViewRatedPosts,
+      },
+      privacy: isOwner
+        ? {
+            isPrivate: Boolean(user.is_private),
+            likedPostsVisibility: user.liked_posts_visibility,
+            ratedPostsVisibility: user.rated_posts_visibility,
+          }
+        : null,
     })
   })
 })
@@ -312,24 +331,122 @@ app.get('/posts', authRequired, (req, res, next) => {
     res.json({ posts, limit, offset })
   })
 })
+app.get('/me/privacy', authRequired, (req, res, next) => {
+  User.findPrivacyById(req.user.id, (err, user) => {
+    if (err) return next(err)
+    if (!user) return res.status(404).json({ message: 'User not found' })
+
+    return res.json({
+      privacy: {
+        isPrivate: Boolean(user.is_private),
+        likedPostsVisibility: user.liked_posts_visibility,
+        ratedPostsVisibility: user.rated_posts_visibility,
+      },
+    })
+  })
+})
 app.get('/users/:username/posts', authRequired, (req, res, next) => {
   const username = req.params.username
-
   const limit = Math.min(parseInt(req.query.limit ?? '20', 10) || 20, 50)
   const offset = parseInt(req.query.offset ?? '0', 10) || 0
 
-  Post.listByUsername(username, { userId: req.user.id, limit, offset }, (err, rows) => {
+  User.findProfileByUsername(username, (err, user) => {
     if (err) return next(err)
+    if (!user) return res.status(404).json({ message: 'User not found' })
 
-    const posts = rows.map((p) => ({
-      ...p,
-      imageUrl: `/posts/${p.id}/image`,
-    }))
+    const isOwner = req.user.id === user.id
+    const canViewPosts = isOwner || !user.is_private
 
-    res.json({ posts, username, limit, offset })
+    if (!canViewPosts) {
+      return res.status(403).json({ message: 'This profile is private' })
+    }
+
+    Post.listByUsername(username, { userId: req.user.id, limit, offset }, (err2, rows) => {
+      if (err2) return next(err2)
+
+      const posts = rows.map((p) => ({
+        ...p,
+        imageUrl: `/posts/${p.id}/image`,
+      }))
+
+      res.json({ posts, username, limit, offset })
+    })
   })
 })
+app.get('/users/:username/liked-posts', authRequired, (req, res, next) => {
+  const username = req.params.username
+  const limit = Math.min(parseInt(req.query.limit ?? '20', 10) || 20, 50)
+  const offset = parseInt(req.query.offset ?? '0', 10) || 0
 
+  User.findProfileByUsername(username, (err, user) => {
+    if (err) return next(err)
+    if (!user) return res.status(404).json({ message: 'User not found' })
+
+    const isOwner = req.user.id === user.id
+    const canViewLikedPosts = isOwner || user.liked_posts_visibility === 'public'
+
+    if (!canViewLikedPosts) {
+      return res.status(403).json({ message: 'Liked posts are private' })
+    }
+
+    Post.listLikedByUsername(
+      username,
+      { viewerUserId: req.user.id, limit, offset },
+      (err2, rows) => {
+        if (err2) return next(err2)
+
+        const posts = rows.map((p) => ({
+          ...p,
+          imageUrl: `/posts/${p.id}/image`,
+        }))
+
+        return res.json({
+          posts,
+          username,
+          limit,
+          offset,
+        })
+      },
+    )
+  })
+})
+app.get('/users/:username/rated-posts', authRequired, (req, res, next) => {
+  const username = req.params.username
+  const limit = Math.min(parseInt(req.query.limit ?? '20', 10) || 20, 50)
+  const offset = parseInt(req.query.offset ?? '0', 10) || 0
+
+  User.findProfileByUsername(username, (err, user) => {
+    if (err) return next(err)
+    if (!user) return res.status(404).json({ message: 'User not found' })
+
+    const isOwner = req.user.id === user.id
+    const canViewRatedPosts = isOwner || user.rated_posts_visibility === 'public'
+
+    if (!canViewRatedPosts) {
+      return res.status(403).json({ message: 'Rated posts are private' })
+    }
+
+    Post.listRatedByUsername(
+      username,
+      { viewerUserId: req.user.id, limit, offset },
+      (err2, rows) => {
+        if (err2) return next(err2)
+
+        const posts = rows.map((p) => ({
+          ...p,
+          imageUrl: `/posts/${p.id}/image`,
+        }))
+
+        return res.json({
+          posts,
+          username,
+          limit,
+          offset,
+        })
+      },
+    )
+  })
+})
 app.get('/posts/:id/image', (req, res, next) => {
   const id = req.params.id
 
@@ -546,7 +663,56 @@ app.patch('/me', authRequired, upload.single('profile_img'), (req, res, next) =>
     return next(e)
   }
 })
+app.patch('/me/privacy', authRequired, (req, res, next) => {
+  try {
+    const { isPrivate, likedPostsVisibility, ratedPostsVisibility } = req.body ?? {}
 
+    const allowedVisibility = ['public', 'private']
+    const patch = {}
+
+    if (isPrivate !== undefined) {
+      if (typeof isPrivate !== 'boolean') {
+        return res.status(400).json({ message: 'isPrivate must be boolean' })
+      }
+      patch.is_private = isPrivate ? 1 : 0
+    }
+
+    if (likedPostsVisibility !== undefined) {
+      if (!allowedVisibility.includes(likedPostsVisibility)) {
+        return res.status(400).json({ message: 'Invalid likedPostsVisibility' })
+      }
+      patch.liked_posts_visibility = likedPostsVisibility
+    }
+
+    if (ratedPostsVisibility !== undefined) {
+      if (!allowedVisibility.includes(ratedPostsVisibility)) {
+        return res.status(400).json({ message: 'Invalid ratedPostsVisibility' })
+      }
+      patch.rated_posts_visibility = ratedPostsVisibility
+    }
+
+    User.updateProfileById(req.user.id, patch, (err, result) => {
+      if (err) return next(err)
+
+      User.findById(req.user.id, (e2, user) => {
+        if (e2) return next(e2)
+        if (!user) return res.status(404).json({ message: 'User not found' })
+
+        return res.json({
+          ok: true,
+          updated: result.updated,
+          privacy: {
+            isPrivate: Boolean(user.is_private),
+            likedPostsVisibility: user.liked_posts_visibility,
+            ratedPostsVisibility: user.rated_posts_visibility,
+          },
+        })
+      })
+    })
+  } catch (e) {
+    return next(e)
+  }
+})
 app.delete('/me/avatar', authRequired, (req, res, next) => {
   User.clearAvatarById(req.user.id, (err, result) => {
     if (err) return next(err)

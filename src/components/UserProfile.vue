@@ -35,7 +35,7 @@ const isClosable = computed(() => {
 })
 
 function goToProfile() {
-  router.push({ name: 'Profile', params: { username: props.username } })
+  router.push(`/${props.username}`)
 }
 </script>
 

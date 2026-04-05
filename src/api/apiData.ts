@@ -9,16 +9,33 @@ export async function getProfileImg(username: string): Promise<string | null> {
   const imgSource = URL.createObjectURL(blob)
   return imgSource
 }
-
-export async function getProfileData(username: string): Promise<User | null> {
+type Permission = {
+  isOwner: Boolean
+  canViewPosts: Boolean
+  canViewLikedPosts: Boolean
+  canViewRatedPosts: Boolean
+}
+export async function getProfileData(
+  username: string,
+): Promise<{ user: User; permissions: Permission } | null> {
   const response = await apiFetch(`/users/${username}`)
   const data = await response.json()
-  const userData = data.user
-  return userData
+  return data
 }
 
 export async function getUserPosts(username: string): Promise<Post[] | null> {
   const response = await apiFetch(`/users/${username}/posts`)
+  const data = await response.json()
+  return data.posts
+}
+export async function getUserLikedPosts(username: string): Promise<Post[] | null> {
+  const response = await apiFetch(`/users/${username}/liked-posts`)
+  const data = await response.json()
+  return data.posts
+}
+
+export async function getUserRatedPosts(username: string): Promise<Post[] | null> {
+  const response = await apiFetch(`/users/${username}/rated-posts`)
   const data = await response.json()
   return data.posts
 }
