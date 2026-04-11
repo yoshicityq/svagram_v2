@@ -1,5 +1,4 @@
 <template>
-  <!-- Loading skeleton -->
   <div v-if="isLoading" class="profile-view">
     <div class="header">
       <div class="header-and-buttons">
@@ -22,7 +21,6 @@
     </div>
   </div>
 
-  <!-- User not found -->
   <div v-else-if="isNotFound" class="profile-view">
     <div class="not-found">
       <svg
@@ -49,7 +47,6 @@
     </div>
   </div>
 
-  <!-- Profile -->
   <div v-else class="profile-view">
     <div class="header">
       <div class="header-and-buttons">
@@ -120,6 +117,7 @@
             </svg>
             {{ $t('buttons.edit_profile') }}
           </MyButton>
+          <MyButton @click="click">Check</MyButton>
         </div>
       </div>
 
@@ -157,7 +155,6 @@ import useModalStore from '@/stores/modals'
 import PostList from '../components/PostList.vue'
 import { computed, ref, watch, type Component } from 'vue'
 import CreatePostDialog from '../components/CreatePostDialog.vue'
-import OpenPostDialog from '../components/OpenPostDialog.vue'
 import MyAvatar from '@/components/MyAvatar.vue'
 import { getProfileData } from '@/api/apiData'
 import type { User } from '@/types/user'
@@ -168,6 +165,8 @@ import EstimatedPostsIcon from '@/assets/icons/EstimatedPostsIcon.vue'
 import FavBrandsIcon from '@/assets/icons/FavBrandsIcon.vue'
 import LocationIcon from '@/assets/icons/LocationIcon.vue'
 import { useI18n } from 'vue-i18n'
+import { useNotification } from '@kyvg/vue3-notification'
+import OpenPostDialog from '@/components/OpenPostDialog.vue'
 
 const { t } = useI18n()
 const modalStore = useModalStore()
@@ -215,6 +214,14 @@ function navigateTabs(tab: Tab) {
 const postsQuantity = ref(0)
 const getLength = (data: number) => (postsQuantity.value = data)
 
+const { notify } = useNotification()
+function click() {
+  notify({
+    title: 'Много запросов',
+    text: 'Подождите ответ сервера',
+    type: 'warn',
+  })
+}
 watch(
   () => route.query.post,
   (newPost) => {

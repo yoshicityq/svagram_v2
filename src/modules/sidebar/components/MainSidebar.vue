@@ -25,7 +25,18 @@
           >
             {{ $t('buttons.feed') }}
           </MyButton>
-
+          <MyButton
+            :is-sidebar-opened="sidebarStore.isOpen"
+            :icon="NotificationsIcon"
+            @click="router.push('/notifications')"
+          >
+            <div class="notifications-btn-content">
+              {{ $t('buttons.notifications') }}
+              <div v-if="unreadCount > 0" class="notifications__count">
+                {{ unreadCount }}
+              </div>
+            </div>
+          </MyButton>
           <MyButton
             :is-sidebar-opened="sidebarStore.isOpen"
             :icon="SettingsIcon"
@@ -69,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import CloseSbIcon from '@/assets/icons/CloseSbIcon.vue'
@@ -86,6 +97,8 @@ import SearchDialog from './SearchDialog.vue'
 import useSidebarStore from '@/stores/sidebar'
 import useAuthStore from '@/stores/auth'
 import { logoutUser } from '../api/actions'
+import NotificationsIcon from '@/assets/icons/NotificationsIcon.vue'
+import { apiFetch } from '@/api/apiFetch'
 
 const sidebarStore = useSidebarStore()
 const authStore = useAuthStore()
@@ -103,6 +116,14 @@ async function logout() {
     console.log(e)
   }
 }
+const unreadCount = ref(0)
+async function getUnreadCount() {
+  const response = await apiFetch('/notifications/unread-count')
+  const data = await response.json()
+  unreadCount.value = data.unreadCount
+}
+
+onMounted(() => getUnreadCount())
 </script>
 
 <style scoped lang="scss">
@@ -181,7 +202,23 @@ async function logout() {
   gap: 10px;
   width: 100%;
 }
-
+.notifications-btn-content {
+  position: relative;
+  .notifications__count {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    font-size: 11px;
+    background-color: var(--accent);
+    border: 1px solid var(--border-primary);
+    border-radius: 50%;
+    top: -4px;
+    right: -20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
 .footer {
   flex-shrink: 0;
   display: flex;

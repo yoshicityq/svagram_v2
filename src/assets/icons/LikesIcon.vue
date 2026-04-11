@@ -20,7 +20,7 @@ const props = defineProps({
   },
   isLiked: {
     type: Boolean,
-    required: true,
+    // required: true,
   },
   isSectionBtn: {
     type: Boolean,

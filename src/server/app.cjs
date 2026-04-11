@@ -7,6 +7,8 @@ const Post = require('./db.cjs').Post
 const User = require('./db.cjs').User
 const PostLike = require('./db.cjs').PostLike
 const PostRating = require('./db.cjs').PostRating
+const Notification = require('./db.cjs').Notification
+const PostComment = require('./db.cjs').PostComment
 const mime = require('mime-types')
 const app = express()
 
@@ -316,6 +318,243 @@ app.get('/users/check-email/:email', (req, res, next) => {
     })
   })
 })
+app.get('/posts/:id/comments', authRequired, (req, res, next) => {
+  const postId = Number(req.params.id)
+  const limit = Math.min(parseInt(req.query.limit ?? '20', 10) || 20, 100)
+  const offset = parseInt(req.query.offset ?? '0', 10) || 0
+
+  if (!Number.isInteger(postId)) {
+    return res.status(400).json({ message: 'Invalid id' })
+  }
+
+  Post.find(postId, (e0, post) => {
+    if (e0) return next(e0)
+    if (!post) return res.status(404).json({ message: 'Post not found' })
+
+    PostComment.listByPostId(postId, { limit, offset }, (err, rows) => {
+      if (err) return next(err)
+
+      const comments = rows.map((c) => ({
+        id: c.id,
+        postId: c.post_id,
+        userId: c.user_id,
+        username: c.username,
+        text: c.text,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+        parentCommentId: c.parent_comment_id,
+        avatarUrl: c.img_mimetype ? `/users/${c.username}/avatar` : null,
+        hasAvatar: !!c.img_mimetype,
+        isMine: c.user_id === req.user.id,
+      }))
+
+      res.json({ comments, limit, offset })
+    })
+  })
+})
+app.post('/posts/:id/comments', authRequired, (req, res, next) => {
+  const postId = Number(req.params.id)
+  const text = String(req.body?.text ?? '').trim()
+  const parentCommentIdRaw = req.body?.parentCommentId
+  const parent_comment_id =
+    parentCommentIdRaw == null || parentCommentIdRaw === '' ? null : Number(parentCommentIdRaw)
+
+  if (!Number.isInteger(postId)) {
+    return res.status(400).json({ message: 'Invalid id' })
+  }
+
+  if (!text) {
+    return res.status(400).json({ message: 'text is required' })
+  }
+
+  if (text.length > 1000) {
+    return res.status(400).json({ message: 'text is too long' })
+  }
+
+  if (parent_comment_id !== null && !Number.isInteger(parent_comment_id)) {
+    return res.status(400).json({ message: 'Invalid parentCommentId' })
+  }
+
+  Post.find(postId, (e0, post) => {
+    if (e0) return next(e0)
+    if (!post) return res.status(404).json({ message: 'Post not found' })
+
+    const createComment = () => {
+      const now = Date.now()
+
+      PostComment.create(
+        {
+          post_id: postId,
+          user_id: req.user.id,
+          text,
+          now,
+          parent_comment_id,
+        },
+        (err, created) => {
+          if (err) return next(err)
+
+          PostComment.findById(created.id, (e2, comment) => {
+            if (e2) return next(e2)
+
+            User.findById(req.user.id, (e3, user) => {
+              if (e3) return next(e3)
+
+              Post.findOwnerByPostId(postId, (ownerErr, owner) => {
+                if (ownerErr) return next(ownerErr)
+
+                const finishResponse = () =>
+                  res.status(201).json({
+                    ok: true,
+                    comment: {
+                      id: comment.id,
+                      postId: comment.post_id,
+                      userId: comment.user_id,
+                      username: user.username,
+                      text: comment.text,
+                      createdAt: comment.created_at,
+                      updatedAt: comment.updated_at,
+                      parentCommentId: comment.parent_comment_id,
+                      avatarUrl: user.img_mimetype ? `/users/${user.username}/avatar` : null,
+                      hasAvatar: !!user.img_mimetype,
+                      isMine: true,
+                    },
+                  })
+
+                if (!owner || owner.id === req.user.id) {
+                  return finishResponse()
+                }
+
+                Notification.create(
+                  {
+                    recipient_user_id: owner.id,
+                    actor_user_id: req.user.id,
+                    type: 'comment',
+                    source_type: 'user',
+                    entity_type: 'post',
+                    entity_id: comment.post_id,
+                    title: 'notification.comment_title',
+                    text: `notification.comment_text`,
+                    created_at: now,
+                    content: text,
+                    metadata: JSON.stringify({
+                      postId,
+                      commentId: comment.id,
+                      parentCommentId: comment.parent_comment_id,
+                    }),
+                  },
+                  (nErr) => {
+                    if (nErr) return next(nErr)
+                    return finishResponse()
+                  },
+                )
+              })
+            })
+          })
+        },
+      )
+    }
+
+    if (parent_comment_id === null) {
+      return createComment()
+    }
+
+    PostComment.findById(parent_comment_id, (e1, parentComment) => {
+      if (e1) return next(e1)
+      if (!parentComment || parentComment.post_id !== postId) {
+        return res.status(400).json({ message: 'Parent comment not found for this post' })
+      }
+
+      return createComment()
+    })
+  })
+})
+
+app.patch('/comments/:id', authRequired, (req, res, next) => {
+  const commentId = Number(req.params.id)
+  const text = String(req.body?.text ?? '').trim()
+
+  if (!Number.isInteger(commentId)) {
+    return res.status(400).json({ message: 'Invalid id' })
+  }
+
+  if (!text) {
+    return res.status(400).json({ message: 'text is required' })
+  }
+
+  if (text.length > 1000) {
+    return res.status(400).json({ message: 'text is too long' })
+  }
+
+  PostComment.updateText(
+    {
+      id: commentId,
+      user_id: req.user.id,
+      text,
+      now: Date.now(),
+    },
+    (err, result) => {
+      if (err) return next(err)
+      if (!result.updated) {
+        return res.status(404).json({ message: 'Comment not found or access denied' })
+      }
+
+      PostComment.findById(commentId, (e2, comment) => {
+        if (e2) return next(e2)
+        if (!comment) {
+          return res.status(404).json({ message: 'Comment not found' })
+        }
+
+        return res.json({
+          ok: true,
+          comment: {
+            id: comment.id,
+            postId: comment.post_id,
+            userId: comment.user_id,
+            text: comment.text,
+            createdAt: comment.created_at,
+            updatedAt: comment.updated_at,
+            parentCommentId: comment.parent_comment_id,
+          },
+        })
+      })
+    },
+  )
+})
+app.delete('/comments/:id', authRequired, (req, res, next) => {
+  const commentId = Number(req.params.id)
+
+  if (!Number.isInteger(commentId)) {
+    return res.status(400).json({ message: 'Invalid id' })
+  }
+
+  PostComment.deleteById({ id: commentId, user_id: req.user.id }, (err, result) => {
+    if (err) return next(err)
+    if (!result.deleted) {
+      return res.status(404).json({ message: 'Comment not found or access denied' })
+    }
+
+    return res.json({ ok: true })
+  })
+})
+app.get('/posts/:id/comments/count', authRequired, (req, res, next) => {
+  const postId = Number(req.params.id)
+
+  if (!Number.isInteger(postId)) {
+    return res.status(400).json({ message: 'Invalid id' })
+  }
+
+  Post.find(postId, (e0, post) => {
+    if (e0) return next(e0)
+    if (!post) return res.status(404).json({ message: 'Post not found' })
+
+    PostComment.countByPostId(postId, (err, row) => {
+      if (err) return next(err)
+      return res.json({
+        commentsCount: Number(row?.commentsCount ?? 0),
+      })
+    })
+  })
+})
 app.get('/posts', authRequired, (req, res, next) => {
   const limit = Math.min(parseInt(req.query.limit ?? '20', 10) || 20, 50)
   const offset = parseInt(req.query.offset ?? '0', 10) || 0
@@ -325,7 +564,10 @@ app.get('/posts', authRequired, (req, res, next) => {
 
     const posts = rows.map((p) => ({
       ...p,
-      imageUrl: `/posts/${p.id}/image`, // фронт будет брать картинку отсюда
+      likes: Number(p.likes ?? 0),
+      commentsCount: Number(p.commentsCount ?? 0),
+      likedByMe: Boolean(p.likedByMe),
+      imageUrl: `/posts/${p.id}/image`,
     }))
 
     res.json({ posts, limit, offset })
@@ -366,6 +608,9 @@ app.get('/users/:username/posts', authRequired, (req, res, next) => {
 
       const posts = rows.map((p) => ({
         ...p,
+        likes: Number(p.likes ?? 0),
+        commentsCount: Number(p.commentsCount ?? 0),
+        likedByMe: Boolean(p.likedByMe),
         imageUrl: `/posts/${p.id}/image`,
       }))
 
@@ -397,6 +642,9 @@ app.get('/users/:username/liked-posts', authRequired, (req, res, next) => {
 
         const posts = rows.map((p) => ({
           ...p,
+          likes: Number(p.likes ?? 0),
+          commentsCount: Number(p.commentsCount ?? 0),
+          likedByMe: Boolean(p.likedByMe),
           imageUrl: `/posts/${p.id}/image`,
         }))
 
@@ -434,6 +682,9 @@ app.get('/users/:username/rated-posts', authRequired, (req, res, next) => {
 
         const posts = rows.map((p) => ({
           ...p,
+          likes: Number(p.likes ?? 0),
+          commentsCount: Number(p.commentsCount ?? 0),
+          likedByMe: Boolean(p.likedByMe),
           imageUrl: `/posts/${p.id}/image`,
         }))
 
@@ -482,6 +733,9 @@ app.get('/posts/:id', authRequired, (req, res, next) => {
     return res.json({
       post: {
         ...post,
+        likes: Number(post.likes ?? 0),
+        commentsCount: Number(post.commentsCount ?? 0),
+        likedByMe: Boolean(post.likedByMe),
         imageUrl: `/posts/${post.id}/image`,
       },
     })
@@ -551,11 +805,59 @@ app.post('/posts/create', authRequired, upload.single('image'), (req, res, next)
 })
 app.post('/posts/:id/like', authRequired, (req, res, next) => {
   const postId = Number(req.params.id)
-  if (!Number.isInteger(postId)) return res.status(400).json({ message: 'Invalid id' })
+  if (!Number.isInteger(postId)) {
+    return res.status(400).json({ message: 'Invalid id' })
+  }
 
-  PostLike.toggle({ post_id: postId, user_id: req.user.id, now: Date.now() }, (err, result) => {
-    if (err) return next(err)
-    res.json({ ok: true, liked: result.liked, likes: result.likes })
+  Post.findOwnerByPostId(postId, (ownerErr, owner) => {
+    if (ownerErr) return next(ownerErr)
+    if (!owner) return res.status(404).json({ message: 'Post not found' })
+
+    const now = Date.now()
+
+    PostLike.toggle({ post_id: postId, user_id: req.user.id, now }, (err, result) => {
+      if (err) return next(err)
+
+      // не уведомляем самого себя
+      if (owner.id === req.user.id) {
+        return res.json({ ok: true, liked: result.liked, likes: result.likes })
+      }
+
+      if (result.liked) {
+        Notification.create(
+          {
+            recipient_user_id: owner.id,
+            actor_user_id: req.user.id,
+            type: 'like',
+            source_type: 'user',
+            entity_type: 'post',
+            entity_id: postId,
+            title: 'notification.like_title',
+            text: `notification.like_text`,
+            created_at: now,
+            metadata: JSON.stringify({ postId }),
+          },
+          (nErr) => {
+            if (nErr) return next(nErr)
+            return res.json({ ok: true, liked: result.liked, likes: result.likes })
+          },
+        )
+      } else {
+        Notification.deleteByKey(
+          {
+            recipient_user_id: owner.id,
+            actor_user_id: req.user.id,
+            type: 'like',
+            entity_type: 'post',
+            entity_id: postId,
+          },
+          (nErr) => {
+            if (nErr) return next(nErr)
+            return res.json({ ok: true, liked: result.liked, likes: result.likes })
+          },
+        )
+      }
+    })
   })
 })
 app.get('/posts/:id/rating', authRequired, (req, res, next) => {
@@ -587,7 +889,6 @@ app.post('/posts/:id/rating', authRequired, (req, res, next) => {
     return res.status(400).json({ message: 'rating must be integer 1..5' })
   }
 
-  // проверим что пост существует
   Post.find(postId, (e0, post) => {
     if (e0) return next(e0)
     if (!post) return res.status(404).json({ message: 'Post not found' })
@@ -597,14 +898,43 @@ app.post('/posts/:id/rating', authRequired, (req, res, next) => {
     PostRating.upsert({ post_id: postId, user_id: req.user.id, rating, now }, (err) => {
       if (err) return next(err)
 
-      PostRating.getMeta({ post_id: postId, user_id: req.user.id }, (e2, row) => {
-        if (e2) return next(e2)
-        return res.json({
-          ok: true,
-          avgRating: Number(row?.avgRating ?? 0),
-          ratingsCount: Number(row?.ratingsCount ?? 0),
-          myRating: row?.myRating == null ? null : Number(row.myRating),
-        })
+      Post.findOwnerByPostId(postId, (ownerErr, owner) => {
+        if (ownerErr) return next(ownerErr)
+
+        const finishResponse = () => {
+          PostRating.getMeta({ post_id: postId, user_id: req.user.id }, (e2, row) => {
+            if (e2) return next(e2)
+            return res.json({
+              ok: true,
+              avgRating: Number(row?.avgRating ?? 0),
+              ratingsCount: Number(row?.ratingsCount ?? 0),
+              myRating: row?.myRating == null ? null : Number(row.myRating),
+            })
+          })
+        }
+
+        if (!owner || owner.id === req.user.id) {
+          return finishResponse()
+        }
+
+        Notification.create(
+          {
+            recipient_user_id: owner.id,
+            actor_user_id: req.user.id,
+            type: 'rate',
+            source_type: 'user',
+            entity_type: 'post',
+            entity_id: postId,
+            title: 'notification.rate_title',
+            text: `notification.rate_text`,
+            created_at: now,
+            metadata: JSON.stringify({ postId, rating }),
+          },
+          (nErr) => {
+            if (nErr) return next(nErr)
+            return finishResponse()
+          },
+        )
       })
     })
   })
@@ -713,12 +1043,84 @@ app.patch('/me/privacy', authRequired, (req, res, next) => {
     return next(e)
   }
 })
+app.get('/notifications', authRequired, (req, res, next) => {
+  const limit = Math.min(Number(req.query.limit) || 20, 100)
+  const offset = Number(req.query.offset) || 0
+
+  Notification.listByRecipient(req.user.id, { limit, offset }, (err, rows) => {
+    if (err) return next(err)
+
+    const items = rows.map((n) => ({
+      id: n.id,
+      type: n.type,
+      sourceType: n.source_type,
+      entityType: n.entity_type,
+      entityId: n.entity_id,
+      title: n.title,
+      text: n.text,
+      isRead: Boolean(n.is_read),
+      createdAt: n.created_at,
+      content: n.content,
+      readAt: n.read_at,
+      delete_at: n.delete_after_read_at,
+      metadata: n.metadata ? JSON.parse(n.metadata) : null,
+      actor: n.actor_id
+        ? {
+            id: n.actor_id,
+            username: n.actor_username,
+            avatarUrl: n.actor_username ? `/users/${n.actor_username}/avatar` : null,
+          }
+        : null,
+    }))
+
+    res.json({ items })
+  })
+})
+app.get('/notifications/unread-count', authRequired, (req, res, next) => {
+  Notification.getUnreadCount(req.user.id, (err, row) => {
+    if (err) return next(err)
+    res.json({ unreadCount: Number(row?.unreadCount ?? 0) })
+  })
+})
+app.patch('/notifications/:id/read', authRequired, (req, res, next) => {
+  const notificationId = Number(req.params.id)
+  if (!Number.isInteger(notificationId)) {
+    return res.status(400).json({ message: 'Invalid notification id' })
+  }
+
+  Notification.markAsRead(notificationId, req.user.id, (err, result) => {
+    if (err) return next(err)
+    res.json({ ok: true, updated: result.updated })
+  })
+})
+app.patch('/notifications/read-all', authRequired, (req, res, next) => {
+  Notification.markAllAsRead(req.user.id, (err, result) => {
+    if (err) return next(err)
+    res.json({ ok: true, updated: result.updated })
+  })
+})
 app.delete('/me/avatar', authRequired, (req, res, next) => {
   User.clearAvatarById(req.user.id, (err, result) => {
     if (err) return next(err)
     res.json({ ok: true, updated: result.updated })
   })
 })
+function cleanupExpiredNotifications() {
+  Notification.cleanupExpiredReadNotifications(Date.now(), (err, result) => {
+    if (err) {
+      console.error('Failed to cleanup expired notifications:', err.message)
+      return
+    }
+
+    if (result?.deleted) {
+      console.log(`Expired notifications deleted: ${result.deleted}`)
+    }
+  })
+}
+
+// запуск периодической очистки
+cleanupExpiredNotifications()
+setInterval(cleanupExpiredNotifications, 60 * 60 * 1000)
 
 app.use((err, req, res, next) => {
   if (err?.code === 'LIMIT_FILE_SIZE') {

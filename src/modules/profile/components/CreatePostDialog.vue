@@ -91,6 +91,7 @@ import { apiFetch } from '@/api/apiFetch'
 import CategoryBrandBlock from './CategoryBrandBlock.vue'
 import type { BrandCategory } from '@/types/category'
 import CrossIcon from '@/assets/icons/CrossIcon.vue'
+import { useNotification } from '@kyvg/vue3-notification'
 
 const modalStore = useModalStore()
 
@@ -158,6 +159,8 @@ function findMatchingCategory(categoryName: string, categoryVal: string, index: 
   return { categoryName: categoryName, categoryVal: values.join(', ') }
 }
 const form = useTemplateRef('form')
+const { notify } = useNotification()
+
 async function publishPost() {
   if (!selectedFile.value) {
     alert('Please select a photo to upload.')
@@ -184,6 +187,11 @@ async function publishPost() {
   })
   if (response.ok) {
     modalStore.isCreateDialogOpen = false
+    notify({
+      title: 'Успешно',
+      text: 'Публикация опубликована',
+      type: 'success',
+    })
   } else {
     alert('Не удалось создать пост')
   }
@@ -221,7 +229,7 @@ onBeforeUnmount(() => {
 }
 
 .dialog-card {
-  width: min(960px, 100%);
+  width: min(1080px, 100%);
   max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
@@ -421,6 +429,8 @@ input[type='file'] {
 .brands-list {
   display: flex;
   flex-direction: column;
+  // display: grid;
+  // grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   max-height: 280px;
   padding-right: 4px;
