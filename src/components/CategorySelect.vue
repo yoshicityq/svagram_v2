@@ -32,7 +32,6 @@
 import ChevronIcon from '@/assets/icons/ChevronIcon.vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-
 type Category = {
   categoryName: string
   categoryVal: string
@@ -85,7 +84,7 @@ function chooseCategory(category: Category) {
 .category-select {
   position: relative;
   width: 100%;
-  max-width: 220px;
+  // max-width: 220px;
 }
 
 .trigger {

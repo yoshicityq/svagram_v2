@@ -49,7 +49,7 @@ watch(
   border-radius: 50%;
   overflow: hidden;
   background: #f6f2fd;
-
+  display: inline-block;
   position: relative;
 
   .avatar-img {

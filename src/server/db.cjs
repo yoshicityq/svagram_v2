@@ -70,11 +70,66 @@ db.serialize(() => {
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   )
 `
+  const sql_notifications = `
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY,
+  recipient_user_id INTEGER NOT NULL,
+  actor_user_id INTEGER NULL,
+  type TEXT NOT NULL,
+  source_type TEXT NOT NULL,
+  entity_type TEXT NULL,
+  entity_id INTEGER NULL,
+  title TEXT NULL,
+  text TEXT NULL,
+  content TEXT NULL,
+  is_read INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  read_at INTEGER NULL,
+  delete_after_read_at INTEGER NULL,
+  metadata TEXT NULL,
+
+  FOREIGN KEY (recipient_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL,
+
+  UNIQUE(recipient_user_id, actor_user_id, type, entity_type, entity_id)
+)
+`
+  const sql_post_comments = `
+  CREATE TABLE IF NOT EXISTS post_comments (
+    id INTEGER PRIMARY KEY,
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    parent_comment_id INTEGER NULL,
+
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_comment_id) REFERENCES post_comments(id) ON DELETE CASCADE
+  )
+`
+
   db.run(sql_refresh)
   db.run(sql_users)
   db.run(sql_posts)
   db.run(sql_post_likes)
   db.run(sql_post_ratings)
+  db.run(sql_notifications)
+  db.run(sql_post_comments)
+
+  db.run(`
+  CREATE INDEX IF NOT EXISTS idx_post_comments_post_created
+  ON post_comments(post_id, created_at DESC)
+`)
+  db.run(`
+  CREATE INDEX IF NOT EXISTS idx_post_comments_user
+  ON post_comments(user_id)
+`)
+  db.run(`
+  CREATE INDEX IF NOT EXISTS idx_post_comments_parent
+  ON post_comments(parent_comment_id)
+`)
 })
 
 class RefreshSession {
@@ -278,6 +333,7 @@ class Post {
       p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
       p.img_mimetype,
       COALESCE(lc.likes, 0) AS likes,
+      COALESCE(cc.commentsCount, 0) AS commentsCount,
       CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
     FROM posts p
     LEFT JOIN (
@@ -285,6 +341,11 @@ class Post {
       FROM post_likes
       GROUP BY post_id
     ) lc ON lc.post_id = p.id
+    LEFT JOIN (
+      SELECT post_id, COUNT(*) AS commentsCount
+      FROM post_comments
+      GROUP BY post_id
+    ) cc ON cc.post_id = p.id
     LEFT JOIN post_likes pl
       ON pl.post_id = p.id AND pl.user_id = ?
     ORDER BY p.id DESC
@@ -300,6 +361,7 @@ class Post {
       p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
       p.img_mimetype,
       COALESCE(lc.likes, 0) AS likes,
+      COALESCE(cc.commentsCount, 0) AS commentsCount,
       CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
     FROM posts p
     LEFT JOIN (
@@ -307,6 +369,11 @@ class Post {
       FROM post_likes
       GROUP BY post_id
     ) lc ON lc.post_id = p.id
+    LEFT JOIN (
+      SELECT post_id, COUNT(*) AS commentsCount
+      FROM post_comments
+      GROUP BY post_id
+    ) cc ON cc.post_id = p.id
     LEFT JOIN post_likes pl
       ON pl.post_id = p.id AND pl.user_id = ?
     WHERE p.user = ?
@@ -408,6 +475,7 @@ class Post {
       p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
       p.img_mimetype,
       COALESCE(lc.likes, 0) AS likes,
+      COALESCE(cc.commentsCount, 0) AS commentsCount,
       CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
     FROM posts p
     LEFT JOIN (
@@ -415,6 +483,11 @@ class Post {
       FROM post_likes
       GROUP BY post_id
     ) lc ON lc.post_id = p.id
+    LEFT JOIN (
+      SELECT post_id, COUNT(*) AS commentsCount
+      FROM post_comments
+      GROUP BY post_id
+    ) cc ON cc.post_id = p.id
     LEFT JOIN post_likes pl
       ON pl.post_id = p.id AND pl.user_id = ?
     WHERE p.id = ?
@@ -422,17 +495,111 @@ class Post {
     db.get(sql, userId, id, cb)
   }
 
-  static update(data, cb) {
-    const sql = 'UPDATE posts SET likes = ?, people_liked = ? WHERE id = ?'
-    db.run(sql, data.likes, data.people_liked, data.id, cb)
-  }
+  // static update(data, cb) {
+  //   const sql = 'UPDATE posts SET likes = ?, people_liked = ? WHERE id = ?'
+  //   db.run(sql, data.likes, data.people_liked, data.id, cb)
+  // }
 
-  static delete(id, cb) {
-    if (!id) return cb(new Error('Please provide an id'))
-    db.run('DELETE FROM posts WHERE id = ?', id, cb)
+  // static delete(id, cb) {
+  //   if (!id) return cb(new Error('Please provide an id'))
+  //   db.run('DELETE FROM posts WHERE id = ?', id, cb)
+  // }
+
+  static findOwnerByPostId(postId, cb) {
+    const sql = `
+    SELECT
+      u.id,
+      u.username
+    FROM posts p
+    JOIN users u
+      ON u.username = p.user
+    WHERE p.id = ?
+  `
+    db.get(sql, postId, cb)
   }
 }
+class PostComment {
+  static create({ post_id, user_id, text, now, parent_comment_id = null }, cb) {
+    const sql = `
+      INSERT INTO post_comments (
+        post_id,
+        user_id,
+        text,
+        created_at,
+        updated_at,
+        parent_comment_id
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `
+    db.run(sql, post_id, user_id, text, now, now, parent_comment_id, function (err) {
+      if (err) return cb(err)
+      cb(null, { id: this.lastID })
+    })
+  }
 
+  static listByPostId(postId, { limit = 20, offset = 0 } = {}, cb) {
+    const sql = `
+      SELECT
+        c.id,
+        c.post_id,
+        c.user_id,
+        c.text,
+        c.created_at,
+        c.updated_at,
+        c.parent_comment_id,
+        u.username,
+        u.img_mimetype
+      FROM post_comments c
+      JOIN users u
+        ON u.id = c.user_id
+      WHERE c.post_id = ?
+      ORDER BY c.created_at DESC, c.id DESC
+      LIMIT ? OFFSET ?
+    `
+    db.all(sql, postId, limit, offset, cb)
+  }
+
+  static findById(id, cb) {
+    const sql = `
+      SELECT *
+      FROM post_comments
+      WHERE id = ?
+    `
+    db.get(sql, id, cb)
+  }
+
+  static countByPostId(postId, cb) {
+    const sql = `
+      SELECT COUNT(*) AS commentsCount
+      FROM post_comments
+      WHERE post_id = ?
+    `
+    db.get(sql, postId, cb)
+  }
+
+  static updateText({ id, user_id, text, now }, cb) {
+    const sql = `
+      UPDATE post_comments
+      SET text = ?, updated_at = ?
+      WHERE id = ? AND user_id = ?
+    `
+    db.run(sql, text, now, id, user_id, function (err) {
+      if (err) return cb(err)
+      cb(null, { updated: this.changes })
+    })
+  }
+
+  static deleteById({ id, user_id }, cb) {
+    const sql = `
+      DELETE FROM post_comments
+      WHERE id = ? AND user_id = ?
+    `
+    db.run(sql, id, user_id, function (err) {
+      if (err) return cb(err)
+      cb(null, { deleted: this.changes })
+    })
+  }
+}
 class PostLike {
   static toggle({ post_id, user_id, now }, cb) {
     // Важно: транзакция, чтобы не было гонок
@@ -532,9 +699,159 @@ class PostRating {
   }
 }
 
+class Notification {
+  static create(data, cb) {
+    const sql = `
+    INSERT OR IGNORE INTO notifications (
+      recipient_user_id,
+      actor_user_id,
+      type,
+      source_type,
+      entity_type,
+      entity_id,
+      title,
+      text,
+      content,
+      is_read,
+      created_at,
+      read_at,
+      delete_after_read_at,
+      metadata
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `
+
+    db.run(
+      sql,
+      data.recipient_user_id,
+      data.actor_user_id ?? null,
+      data.type,
+      data.source_type,
+      data.entity_type ?? null,
+      data.entity_id ?? null,
+      data.title ?? null,
+      data.text ?? null,
+      data.content ?? null,
+      data.is_read ?? 0,
+      data.created_at,
+      data.read_at ?? null,
+      data.delete_after_read_at ?? null,
+      data.metadata ?? null,
+      function (err) {
+        if (err) return cb(err)
+        cb(null, { id: this.lastID, created: this.changes > 0 })
+      },
+    )
+  }
+  static listByRecipient(userId, { limit = 20, offset = 0 } = {}, cb) {
+    const sql = `
+      SELECT
+        n.id,
+        n.type,
+        n.source_type,
+        n.entity_type,
+        n.entity_id,
+        n.text,
+        n.title,
+        n.content,
+        n.is_read,
+        n.created_at,
+        n.read_at,
+        n.metadata,
+        n.delete_after_read_at,
+        u.id AS actor_id,
+        u.username AS actor_username,
+        u.img_mimetype AS actor_img_mimetype
+      FROM notifications n
+      LEFT JOIN users u
+        ON u.id = n.actor_user_id
+      WHERE n.recipient_user_id = ?
+      ORDER BY n.created_at DESC
+      LIMIT ? OFFSET ?
+    `
+    db.all(sql, userId, limit, offset, cb)
+  }
+
+  static getUnreadCount(userId, cb) {
+    const sql = `
+      SELECT COUNT(*) AS unreadCount
+      FROM notifications
+      WHERE recipient_user_id = ? AND is_read = 0
+    `
+    db.get(sql, userId, cb)
+  }
+
+  static markAsRead(id, recipientUserId, cb) {
+    const now = Date.now()
+    const deleteAfterReadAt = now + 3 * 24 * 60 * 60 * 1000
+
+    const sql = `
+    UPDATE notifications
+    SET
+      is_read = 1,
+      read_at = CASE WHEN read_at IS NULL THEN ? ELSE read_at END,
+      delete_after_read_at = CASE WHEN delete_after_read_at IS NULL THEN ? ELSE delete_after_read_at END
+    WHERE id = ? AND recipient_user_id = ?
+  `
+
+    db.run(sql, [now, deleteAfterReadAt, id, recipientUserId], function (err) {
+      if (err) return cb(err)
+      cb(null, { updated: this.changes > 0 })
+    })
+  }
+  static markAllAsRead(recipientUserId, cb) {
+    const now = Date.now()
+    const deleteAfterReadAt = now + 3 * 24 * 60 * 60 * 1000
+
+    const sql = `
+    UPDATE notifications
+    SET
+      is_read = 1,
+      read_at = CASE WHEN read_at IS NULL THEN ? ELSE read_at END,
+      delete_after_read_at = CASE WHEN delete_after_read_at IS NULL THEN ? ELSE delete_after_read_at END
+    WHERE recipient_user_id = ? AND is_read = 0
+  `
+
+    db.run(sql, [now, deleteAfterReadAt, recipientUserId], function (err) {
+      if (err) return cb(err)
+      cb(null, { updated: this.changes })
+    })
+  }
+  static cleanupExpiredReadNotifications(now, cb) {
+    const sql = `
+    DELETE FROM notifications
+    WHERE is_read = 1
+      AND delete_after_read_at IS NOT NULL
+      AND delete_after_read_at <= ?
+  `
+
+    db.run(sql, [now], function (err) {
+      if (err) return cb(err)
+      cb(null, { deleted: this.changes })
+    })
+  }
+
+  static deleteByKey({ recipient_user_id, actor_user_id, type, entity_type, entity_id }, cb) {
+    const sql = `
+      DELETE FROM notifications
+      WHERE recipient_user_id = ?
+        AND actor_user_id = ?
+        AND type = ?
+        AND entity_type = ?
+        AND entity_id = ?
+    `
+    db.run(sql, recipient_user_id, actor_user_id, type, entity_type, entity_id, function (err) {
+      if (err) return cb(err)
+      cb(null, { deleted: this.changes })
+    })
+  }
+}
+
 module.exports = db
 module.exports.User = User
 module.exports.Post = Post
 module.exports.PostLike = PostLike
 module.exports.PostRating = PostRating
+module.exports.Notification = Notification
+module.exports.PostComment = PostComment
 module.exports.RefreshSession = RefreshSession

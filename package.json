@@ -17,6 +17,7 @@
     "format:check": "prettier . --check"
   },
   "dependencies": {
+    "@kyvg/vue3-notification": "^3.4.2",
     "@vee-validate/yup": "^4.15.1",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.1",

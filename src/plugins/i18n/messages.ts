@@ -23,6 +23,8 @@ export const messages = {
       cancel: 'Cancel',
       open: 'Open',
       delete: 'Delete',
+      notifications: 'Notifications',
+      all_read: 'Mark all as read',
     },
     modals: {
       create_new_post: 'Creating a new post',
@@ -60,6 +62,7 @@ export const messages = {
       liked_posts_title: 'Liked posts',
       rated_posts_title: 'Rated posts',
       private_account_title: 'Private profile',
+      notifications_title: 'Notifications',
     },
     description: {
       reg_description: 'Please enter the required information',
@@ -84,6 +87,7 @@ export const messages = {
       feed: 'Feed',
       auth: 'Authorization',
       reg: 'Registration',
+      notifications: 'Notifications',
     },
     profilePage: {
       posts_count: 'posts',
@@ -122,6 +126,19 @@ export const messages = {
       or: 'Or',
       brands: 'Brands',
       add_few_brands: 'Add one or more brand-category pairs for this post.',
+      all: 'All',
+      unread: 'Unread',
+    },
+    time: {
+      just_now: 'just now',
+      minute_ago_1: 'minute ago',
+      minute_ago_5: 'minutes ago',
+      hour_ago_1: 'hour ago',
+      hour_ago_5: 'hours ago',
+      day_ago_1: 'day ago',
+      day_ago_5: 'days ago',
+      week_ago_1: 'week ago',
+      week_ago_5: 'weeks ago',
     },
     validation: {
       required: 'This field is required',
@@ -134,12 +151,22 @@ export const messages = {
       invalid_credentials: 'Invalid credentials',
       empty_fields: 'There ara empty fields',
     },
+    notification: {
+      comment_title: 'New comment',
+      like_title: 'New like',
+      rate_title: 'New rate',
+      comment_text: 'commented your publication',
+      like_text: 'liked your publication',
+      rate_text: 'rated your publication as ',
+    },
   },
   ru: {
     buttons: {
       search: 'Поиск',
       feed: 'Лента',
       settings: 'Настройки',
+      notifications: 'Уведомления',
+
       logout: 'Выход',
       closeSb: 'Скрыть',
       create_post: 'Создать пост',
@@ -159,6 +186,7 @@ export const messages = {
       cancel: 'Отмена',
       delete: 'Удалить',
       open: 'Открыть',
+      all_read: 'Прочитать все',
     },
     modals: {
       create_new_post: 'Создание нового поста',
@@ -196,6 +224,7 @@ export const messages = {
       rated_posts_title: 'Оцененные публикации',
       private_account_title: 'Приватный профиль',
       empty_posts_list_title: 'Публикаций нет',
+      notifications_title: 'Уведомления',
     },
     description: {
       reg_description: 'Пожалуйста введите необходимую информацию',
@@ -223,6 +252,7 @@ export const messages = {
       feed: 'Лента',
       auth: 'Авторизация',
       reg: 'Регистрация',
+      notifications: 'Уведомления',
     },
 
     profilePage: {
@@ -260,6 +290,23 @@ export const messages = {
       or: 'Или',
       brands: 'Бренды',
       add_few_brands: 'Добавьте одну или несколько категорий одежды к вашей публикации.',
+      all: 'Все',
+      unread: 'Непрочитанные',
+    },
+    time: {
+      just_now: 'только что',
+      minute_ago_1: 'минуту назад',
+      minute_ago_2_4: 'минуты назад',
+      minute_ago_5: 'минут назад',
+      hour_ago_1: 'час назад',
+      hour_ago_2_4: 'часа назад',
+      hour_ago_5: 'часов назад',
+      day_ago_1: 'день назад',
+      day_ago_2_4: 'дня назад',
+      day_ago_5: 'дней назад',
+      week_ago_1: 'неделю назад',
+      week_ago_2_4: 'недели назад',
+      week_ago_5: 'недель назад',
     },
     validation: {
       required: 'Это поле обязательно',
@@ -271,6 +318,14 @@ export const messages = {
       smth_wrong: 'Что-то пошло не так :(',
       invalid_credentials: 'Неверные данные',
       empty_fields: 'Есть незаполненные поля',
+    },
+    notification: {
+      comment_title: 'Новый комментарий',
+      like_title: 'Новый лайк',
+      rate_title: 'Новая оценка',
+      comment_text: 'оставил комментарий под вашей публикацией',
+      like_text: 'понравилась ваша публикация',
+      rate_text: 'оценил вашу публикацию на ',
     },
   },
 }

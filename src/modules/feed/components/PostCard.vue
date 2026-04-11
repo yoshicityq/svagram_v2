@@ -136,6 +136,7 @@ function getBrandIcon(category: string) {
   max-width: 100%;
   overflow: hidden;
   background: var(--image-bg);
+  border-bottom-left-radius: var(--radius-sm);
 }
 
 .image {

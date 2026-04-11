@@ -4,7 +4,7 @@ const router = {
   path: '/notifications',
   name: 'Notifications',
   meta: {
-    title: 'Уведомления',
+    title: 'document_title.notifications',
     layout: MainLayout,
     requiresAuth: true,
   },

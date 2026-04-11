@@ -1,3 +1,4 @@
+import { apiFetch } from '@/api/apiFetch'
 import { defineStore } from 'pinia'
 
 const useSidebarStore = defineStore('sidebar', {
