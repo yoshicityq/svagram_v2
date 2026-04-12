@@ -211,6 +211,7 @@ onMounted(() => getUnreadCount())
     font-size: 11px;
     background-color: var(--accent);
     border: 1px solid var(--border-primary);
+    color: var(--text-on-accent);
     border-radius: 50%;
     top: -4px;
     right: -20px;

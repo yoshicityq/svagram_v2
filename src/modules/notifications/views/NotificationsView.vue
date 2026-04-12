@@ -83,11 +83,13 @@
           >
             <div class="notification__avatar-wrap">
               <MyAvatar
+                v-if="n.actor"
                 :username="n.actor.username"
                 size="small"
                 @click="router.push({ path: n.actor.username })"
                 class="avatar-img"
               />
+              <SystemIcon v-if="n.sourceType === 'system'" class="system-img" />
               <span class="notification__type-badge" :class="`notification__type-badge--${n.type}`">
                 <svg
                   v-if="n.type === 'like'"
@@ -142,16 +144,27 @@
 
               <div class="notification__text">
                 <div>
-                  <router-link :to="n.actor.username" class="notification__username">{{
-                    n.actor.username
-                  }}</router-link>
+                  <router-link
+                    v-if="n.actor"
+                    :to="n.actor.username"
+                    class="notification__username"
+                    >{{ n.actor.username }}</router-link
+                  >
                   <span class="notification__action">{{ $t(n.text) }}</span>
                   <span v-if="n.type === 'rate' && n.metadata?.rating" class="notification__action"
                     >{{ n.metadata?.rating }}/5★</span
                   >
+                  <span
+                    v-if="n.type === 'title' && n.metadata?.titleName"
+                    class="notification__action notification__action__titleName"
+                    >{{ n.metadata.titleName }}</span
+                  >
                 </div>
-                <div class="comment__text">
-                  <span v-if="n.type === 'comment' && n.content">{{ n.content }}</span>
+                <div v-if="n.type === 'comment' && n.content" class="notification__subtext">
+                  <span>{{ n.content }}</span>
+                </div>
+                <div v-if="n.type === 'title' && n.content" class="notification__subtext">
+                  <span>{{ $t(n.content) }}</span>
                 </div>
               </div>
 
@@ -221,6 +234,8 @@
 
 <script setup lang="ts">
 import { apiFetch } from '@/api/apiFetch'
+import SettingsIcon from '@/assets/icons/SettingsIcon.vue'
+import SystemIcon from '@/assets/icons/SystemIcon.vue'
 import MyAvatar from '@/components/MyAvatar.vue'
 import MyLoader from '@/components/MyLoader.vue'
 import OpenPostDialog from '@/components/OpenPostDialog.vue'
@@ -236,6 +251,8 @@ type Meta = {
   commentId?: number | null
   parentCommentId?: number | null
   rating: number | null
+  titleId?: number
+  titleName?: string
 }
 
 type Actor = {
@@ -698,6 +715,10 @@ onBeforeUnmount(() => {
     cursor: pointer;
   }
 }
+.system-img {
+  width: 40px;
+  height: 40px;
+}
 
 .notification__type-badge {
   position: absolute;
@@ -770,8 +791,11 @@ onBeforeUnmount(() => {
 
 .notification__action {
   color: var(--text-secondary);
+  &__titleName {
+    font-weight: 600;
+  }
 }
-.comment__text {
+.notification__subtext {
   color: var(--text-muted);
   text-overflow: ellipsis;
   white-space: nowrap;

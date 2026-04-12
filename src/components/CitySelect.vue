@@ -243,7 +243,7 @@ const cities = [
 .field {
   width: 100%;
   min-height: 42px;
-  padding: 0 12px 0 14px;
+  padding: 0 12px;
   border: 1px solid var(--input-border);
   border-radius: var(--radius-sm);
   background: var(--input-bg);
@@ -305,8 +305,8 @@ const cities = [
 }
 
 .field__icon--clear {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   color: var(--accent);
 }
 

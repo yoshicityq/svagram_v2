@@ -6,4 +6,6 @@ export type User = {
   hasAvatar: boolean
   avatarUrl: string
   favorite_brands: string
+  titleId: number | null
+  title_name: string | null
 }
