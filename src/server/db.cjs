@@ -17,6 +17,7 @@ db.serialize(() => {
     city TEXT NOT NULL,
     description TEXT,
     favorite_brands TEXT,
+    title_id INTEGER NULL,
     is_private INTEGER NOT NULL DEFAULT 0,
     liked_posts_visibility TEXT NOT NULL DEFAULT 'public',
     rated_posts_visibility TEXT NOT NULL DEFAULT 'public')
@@ -109,6 +110,21 @@ CREATE TABLE IF NOT EXISTS notifications (
     FOREIGN KEY (parent_comment_id) REFERENCES post_comments(id) ON DELETE CASCADE
   )
 `
+  const sql_titles = `
+CREATE TABLE IF NOT EXISTS titles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title_name TEXT NOT NULL,
+  description TEXT NULL
+);`
+  const sql_user_titles = `
+CREATE TABLE IF NOT EXISTS user_titles (
+  user_id INTEGER NOT NULL,
+  title_id INTEGER NOT NULL,
+  earned_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, title_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (title_id) REFERENCES titles(id) ON DELETE CASCADE
+);`
 
   db.run(sql_refresh)
   db.run(sql_users)
@@ -117,7 +133,8 @@ CREATE TABLE IF NOT EXISTS notifications (
   db.run(sql_post_ratings)
   db.run(sql_notifications)
   db.run(sql_post_comments)
-
+  db.run(sql_titles)
+  db.run(sql_user_titles)
   db.run(`
   CREATE INDEX IF NOT EXISTS idx_post_comments_post_created
   ON post_comments(post_id, created_at DESC)
@@ -238,17 +255,20 @@ class User {
   static findProfileByUsername(username, cb) {
     const sql = `
     SELECT
-      id,
-      username,
-      city,
-      description,
-      favorite_brands,
-      img_mimetype,
-      COALESCE(is_private, 0) AS is_private,
-      COALESCE(liked_posts_visibility, 'public') AS liked_posts_visibility,
-      COALESCE(rated_posts_visibility, 'public') AS rated_posts_visibility
-    FROM users
-    WHERE username = ?
+      u.id,
+      u.username,
+      u.city,
+      u.description,
+      u.favorite_brands,
+      u.img_mimetype,
+      COALESCE(u.is_private, 0) AS is_private,
+      COALESCE(u.liked_posts_visibility, 'public') AS liked_posts_visibility,
+      COALESCE(u.rated_posts_visibility, 'public') AS rated_posts_visibility,
+      u.title_id,
+      t.title_name  AS current_title
+    FROM users u
+    LEFT JOIN titles t ON t.id = u.title_id
+    WHERE u.username = ?
   `
     db.get(sql, username, cb)
   }
@@ -846,6 +866,70 @@ class Notification {
     })
   }
 }
+class Title {
+  static all(cb) {
+    db.all('SELECT * FROM titles ORDER BY id', cb)
+  }
+  static findById(id, cb) {
+    db.get('SELECT * FROM titles WHERE id = ?', id, cb)
+  }
+  static create({ title_name, description }, cb) {
+    db.run(
+      'INSERT INTO titles (title_name, description) VALUES (?, ?)',
+      title_name,
+      description ?? null,
+      function (err) {
+        err ? cb(err) : cb(null, { id: this.lastID })
+      },
+    )
+  }
+  // Выдать титул пользователю (за достижение)
+  static grant(user_id, title_id, cb) {
+    db.run(
+      'INSERT OR IGNORE INTO user_titles (user_id, title_id, earned_at) VALUES (?, ?, ?)',
+      user_id,
+      title_id,
+      Date.now(),
+      function (err) {
+        err ? cb(err) : cb(null, { granted: this.changes > 0 })
+      },
+    )
+  }
+  // Список заработанных пользователем
+  static listEarned(user_id, cb) {
+    db.all(
+      `
+      SELECT t.id, t.title_name, t.description, ut.earned_at
+      FROM user_titles ut
+      JOIN titles t ON t.id = ut.title_id
+      WHERE ut.user_id = ?
+      ORDER BY ut.earned_at DESC
+    `,
+      user_id,
+      cb,
+    )
+  }
+  // Установить выбранный титул (только если заработан, или null чтобы снять)
+  static setSelected(user_id, title_id, cb) {
+    if (title_id === null) {
+      return db.run('UPDATE users SET title_id = NULL WHERE id = ?', user_id, function (err) {
+        err ? cb(err) : cb(null, { updated: this.changes })
+      })
+    }
+    db.get(
+      'SELECT 1 FROM user_titles WHERE user_id = ? AND title_id = ?',
+      user_id,
+      title_id,
+      (err, row) => {
+        if (err) return cb(err)
+        if (!row) return cb(new Error('Title not earned'))
+        db.run('UPDATE users SET title_id = ? WHERE id = ?', title_id, user_id, function (e) {
+          e ? cb(e) : cb(null, { updated: this.changes })
+        })
+      },
+    )
+  }
+}
 
 module.exports = db
 module.exports.User = User
@@ -854,4 +938,6 @@ module.exports.PostLike = PostLike
 module.exports.PostRating = PostRating
 module.exports.Notification = Notification
 module.exports.PostComment = PostComment
+module.exports.Title = Title
+
 module.exports.RefreshSession = RefreshSession

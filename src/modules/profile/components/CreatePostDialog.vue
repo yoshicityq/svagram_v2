@@ -32,6 +32,7 @@
               </label>
 
               <textarea
+                v-model="textarea"
                 id="description"
                 name="description"
                 class="text-input"
@@ -103,7 +104,7 @@ const categoryObj_default: BrandCategory = {
 
 const previewUrl = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
-
+const textarea = ref()
 let addedBrands = reactive<Array<BrandCategory>>([])
 function addBlock() {
   let categoryObj = structuredClone(categoryObj_default)
@@ -129,6 +130,7 @@ function cleanupPreview() {
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = null
+    textarea.value = ''
   }
 }
 

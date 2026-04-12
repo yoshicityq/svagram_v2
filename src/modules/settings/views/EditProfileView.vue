@@ -78,7 +78,13 @@
                   <CitySelect :user-city="userData?.city" v-model="chosenCity" name="city" />
                 </div>
               </div>
-
+              <div class="field">
+                <label class="field-label">{{ $t('editProfile.title') }}</label>
+                <div class="field-control">
+                  <!-- <CitySelect :user-city="userData?.city" v-model="chosenCity" name="city" /> -->
+                  <TitleSelect v-model="title" />
+                </div>
+              </div>
               <div class="field field--brands">
                 <label class="field-label">{{ $t('editProfile.fav_brands') }}</label>
 
@@ -123,12 +129,13 @@ import BrandSelect from '@/components/BrandSelect.vue'
 import CitySelect from '@/components/CitySelect.vue'
 import MyButton from '@/components/UI/MyButton.vue'
 import MyInput from '@/components/UI/MyInput.vue'
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, reactive, ref, useTemplateRef, watch } from 'vue'
 import noAvatar from '@/assets/images/no_avatar.png'
 import useAuthStore from '@/stores/auth'
 import { apiFetch } from '@/api/apiFetch'
 import type { User } from '@/types/user'
 import { getProfileData, getProfileImg } from '@/api/apiData'
+import TitleSelect from '../components/TitleSelect.vue'
 
 const authStore = useAuthStore()
 const userData = ref<User | null>(null)
@@ -140,7 +147,12 @@ const form = useTemplateRef('form')
 const chosenCity = ref<string>('')
 const favoriteBrands = ref<string[]>([''])
 const description = ref('')
+type Title = {
+  id: number
+  title_name: string | null
+}
 
+const title = ref<Title | null>(null)
 const userAvatar = computed(() => {
   if (!previewAvatar.value) {
     if (userData.value?.hasAvatar) {
@@ -248,7 +260,20 @@ watch(
   async () => {
     if (!userData.value) {
       const data = await getProfileData(authStore.user?.username as string)
-      if (data) userData.value = data.user
+      // const response = await apiFetch('/me/titles')
+      // const data2 = await response.json()
+      // console.log(data2)
+      if (data) {
+        userData.value = data.user
+        if (userData.value.titleId) {
+          title.value = {
+            id: userData.value.titleId,
+            title_name: userData.value.title_name,
+          }
+        } else {
+          title.value = null
+        }
+      }
       previewAvatar.value = await getProfileImg(authStore.user?.username as string)
 
       if (userData.value) {
@@ -353,6 +378,7 @@ watch(
   position: relative;
   cursor: pointer;
   box-shadow: inset 0 0 0 1px var(--accent-soft);
+  background: #f6f2fd;
 }
 
 .avatar-img {

@@ -9,6 +9,7 @@ const PostLike = require('./db.cjs').PostLike
 const PostRating = require('./db.cjs').PostRating
 const Notification = require('./db.cjs').Notification
 const PostComment = require('./db.cjs').PostComment
+const Title = require('./db.cjs').Title
 const mime = require('mime-types')
 const app = express()
 
@@ -113,7 +114,48 @@ app.post('/auth/register', async (req, res, next) => {
           return next(err)
         }
 
-        return res.status(201).json({ ok: true, user })
+        // После создания пользователя, назначим титул "Zvezdochka"
+        const titleId = 1 // ID титула Zvezdochka
+        Title.grant(user.id, titleId, (errGrant) => {
+          if (errGrant) return next(errGrant)
+
+          // Отправим уведомление пользователю о получении титула
+          const now = Date.now()
+          Notification.create(
+            {
+              recipient_user_id: user.id,
+              actor_user_id: null, // Система или администратор
+              type: 'title',
+              source_type: 'system',
+              entity_type: 'user',
+              entity_id: user.id,
+              title: 'notification.congratulations_title',
+              text: `notification.achievement_text`,
+              content: `notification.achievement_reg_content`,
+              created_at: now,
+              is_read: 0,
+              metadata: JSON.stringify({
+                titleId: titleId,
+                titleName: 'Zvezdochka',
+              }),
+            },
+            (nErr) => {
+              if (nErr) return next(nErr)
+
+              return res.status(201).json({
+                ok: true,
+                user: {
+                  id: user.id,
+                  username: user.username,
+                  email: user.email,
+                  city: user.city,
+                  favorite_brands: user.favorite_brands ?? null,
+                },
+                message: 'Registration successful and title awarded!',
+              })
+            },
+          )
+        })
       },
     )
   } catch (e) {
@@ -268,6 +310,8 @@ app.get('/users/:username', authRequired, (req, res, next) => {
         favorite_brands: user.favorite_brands ?? null,
         hasAvatar: !!user.img_mimetype,
         avatarUrl: user.img_mimetype ? `/users/${user.username}/avatar` : null,
+        titleId: user.title_id,
+        title_name: user.current_title,
       },
       permissions: {
         isOwner,
@@ -796,7 +840,67 @@ app.post('/posts/create', authRequired, upload.single('image'), (req, res, next)
       },
       (err, created) => {
         if (err) return next(err)
-        return res.status(201).json({ ok: true, id: created.id })
+
+        // Проверим количество постов у пользователя
+        Post.listByUsername(username, { userId: req.user.id }, (err, posts) => {
+          if (err) return next(err)
+
+          const titleID = 2 // 2 - ID титула "Swag machine"
+
+          // Если опубликовано 10 постов, проверим, выдан ли титул
+          if (posts.length >= 1) {
+            // Проверим, есть ли уже титул у пользователя
+            Title.listEarned(req.user.id, (errList, earnedTitles) => {
+              if (errList) return next(errList)
+
+              // Проверим, есть ли титул "Swag machine" (ID титула 2)
+              const hasTitle = earnedTitles.some((title) => title.id === titleID)
+
+              if (!hasTitle) {
+                // Если титул не выдан, выдаем титул
+                Title.grant(req.user.id, titleID, (errGrant) => {
+                  if (errGrant) return next(errGrant)
+
+                  const now = Date.now()
+                  Notification.create(
+                    {
+                      recipient_user_id: req.user.id,
+                      actor_user_id: null, // Система или администратор
+                      type: 'title',
+                      source_type: 'system',
+                      entity_type: 'user',
+                      entity_id: req.user.id,
+                      title: 'notification.congratulations_title',
+                      text: `notification.achievement_text`,
+                      content: `notification.achievement_10_posts_content`,
+                      created_at: now,
+                      is_read: 0,
+                      metadata: JSON.stringify({
+                        titleId: titleID,
+                        titleName: 'Swag machine',
+                      }),
+                    },
+                    (nErr) => {
+                      if (nErr) return next(nErr) // Обработка ошибки
+
+                      // Уведомление успешно создано
+                      console.log('Notification successfully created')
+
+                      // Возвращаем ответ
+                      return res.status(201).json({ ok: true, id: created.id })
+                    },
+                  )
+                })
+              } else {
+                // Если титул уже есть, просто возвращаем успешный ответ
+                return res.status(201).json({ ok: true, id: created.id })
+              }
+            })
+          } else {
+            // Если количество постов меньше 10, просто возвращаем успешный ответ
+            return res.status(201).json({ ok: true, id: created.id })
+          }
+        })
       },
     )
   } catch (e) {
@@ -818,11 +922,50 @@ app.post('/posts/:id/like', authRequired, (req, res, next) => {
     PostLike.toggle({ post_id: postId, user_id: req.user.id, now }, (err, result) => {
       if (err) return next(err)
 
-      // не уведомляем самого себя
+      // Лайк от владельца поста — просто отвечаем, без уведомлений и титулов
       if (owner.id === req.user.id) {
         return res.json({ ok: true, liked: result.liked, likes: result.likes })
       }
 
+      // Финальный ответ клиенту — вызываем после всей фоновой работы
+      const respond = () => res.json({ ok: true, liked: result.liked, likes: result.likes })
+
+      // Проверка на достижение «100 лайков на одном посте» — только при постановке лайка
+      const checkAchievement = (cb) => {
+        if (!result.liked) return cb()
+        if (result.likes < 3) return cb()
+
+        const TITLE_ID = 3 // ID титула «Fame ebet»
+
+        Title.grant(owner.id, TITLE_ID, (errGrant, grantResult) => {
+          if (errGrant) return cb(errGrant)
+          // Если титул уже был выдан раньше — повторное уведомление не шлём
+          if (!grantResult?.granted) return cb()
+
+          Notification.create(
+            {
+              recipient_user_id: owner.id,
+              actor_user_id: null,
+              type: 'title',
+              source_type: 'system',
+              entity_type: 'user',
+              entity_id: owner.id,
+              title: 'notification.congratulations_title',
+              text: 'notification.achievement_text',
+              content: 'notification.achievement_100_likes_content',
+              created_at: now,
+              is_read: 0,
+              metadata: JSON.stringify({
+                titleId: TITLE_ID,
+                titleName: 'Fame ebet',
+              }),
+            },
+            cb,
+          )
+        })
+      }
+
+      // Уведомление о самом лайке (или его удаление при анлайке)
       if (result.liked) {
         Notification.create(
           {
@@ -833,13 +976,16 @@ app.post('/posts/:id/like', authRequired, (req, res, next) => {
             entity_type: 'post',
             entity_id: postId,
             title: 'notification.like_title',
-            text: `notification.like_text`,
+            text: 'notification.like_text',
             created_at: now,
             metadata: JSON.stringify({ postId }),
           },
           (nErr) => {
             if (nErr) return next(nErr)
-            return res.json({ ok: true, liked: result.liked, likes: result.likes })
+            checkAchievement((aErr) => {
+              if (aErr) return next(aErr)
+              respond()
+            })
           },
         )
       } else {
@@ -853,7 +999,7 @@ app.post('/posts/:id/like', authRequired, (req, res, next) => {
           },
           (nErr) => {
             if (nErr) return next(nErr)
-            return res.json({ ok: true, liked: result.liked, likes: result.likes })
+            respond()
           },
         )
       }
@@ -1097,6 +1243,77 @@ app.patch('/notifications/read-all', authRequired, (req, res, next) => {
   Notification.markAllAsRead(req.user.id, (err, result) => {
     if (err) return next(err)
     res.json({ ok: true, updated: result.updated })
+  })
+})
+// Каталог всех существующих титулов (публично)
+app.get('/titles', (req, res) => {
+  Title.all((err, rows) => {
+    if (err) return res.status(500).json({ error: 'DB error' })
+    res.json(rows)
+  })
+})
+
+// Титулы, заработанные текущим пользователем
+app.get('/me/titles', authRequired, (req, res) => {
+  Title.listEarned(req.user.id, (err, rows) => {
+    if (err) return res.status(500).json({ error: 'DB error' })
+    res.json(rows)
+  })
+})
+
+// Заработанные титулы любого пользователя по username (для чужого профиля)
+app.get('/users/:username/titles', (req, res) => {
+  const { User } = require('./db.cjs')
+  User.findByUsername(req.params.username, (err, user) => {
+    if (err) return res.status(500).json({ error: 'DB error' })
+    if (!user) return res.status(404).json({ error: 'User not found' })
+    Title.listEarned(user.id, (e, rows) => {
+      if (e) return res.status(500).json({ error: 'DB error' })
+      res.json(rows)
+    })
+  })
+})
+
+// Выбрать активный титул (или снять — передать title_id: null)
+app.put('/me/title', authRequired, (req, res) => {
+  const { title_id } = req.body
+  if (title_id !== null && !Number.isInteger(title_id)) {
+    return res.status(400).json({ error: 'title_id must be integer or null' })
+  }
+  Title.setSelected(req.user.id, title_id, (err, result) => {
+    if (err) {
+      if (err.message === 'Title not earned') {
+        return res.status(403).json({ error: 'You have not earned this title' })
+      }
+      return res.status(500).json({ error: 'DB error' })
+    }
+    res.json({ ok: true, ...result })
+  })
+})
+
+// Админ: создать новый титул в каталоге
+app.post('/api/admin/titles', authRequired, (req, res) => {
+  // TODO: добавьте проверку прав админа, например if (!req.user.is_admin) return res.sendStatus(403)
+  const { title_name, description } = req.body
+  if (!title_name || typeof title_name !== 'string') {
+    return res.status(400).json({ error: 'title_name required' })
+  }
+  Title.create({ title_name, description }, (err, result) => {
+    if (err) return res.status(500).json({ error: 'DB error' })
+    res.status(201).json(result)
+  })
+})
+
+// Админ: выдать титул пользователю вручную (или вызывайте Title.grant из логики достижений)
+app.post('/admin/titles/grant', authRequired, (req, res) => {
+  // TODO: проверка админа
+  const { user_id, title_id } = req.body
+  if (!Number.isInteger(user_id) || !Number.isInteger(title_id)) {
+    return res.status(400).json({ error: 'user_id and title_id must be integers' })
+  }
+  Title.grant(user_id, title_id, (err, result) => {
+    if (err) return res.status(500).json({ error: 'DB error' })
+    res.json(result)
   })
 })
 app.delete('/me/avatar', authRequired, (req, res, next) => {

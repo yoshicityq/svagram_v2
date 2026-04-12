@@ -59,10 +59,13 @@
                 <div class="user-top-row">
                   <span class="username">{{ username }}</span>
 
-                  <div v-if="userProfileData?.city" class="meta-chip">
-                    <LocationIcon class="meta-chip-icon" />
-                    <span>{{ userProfileData.city }}</span>
+                  <div v-if="userProfileData?.title_name" class="title-badge">
+                    <span>{{ userProfileData.title_name }}</span>
                   </div>
+                </div>
+                <div v-if="userProfileData?.city" class="meta-chip">
+                  <LocationIcon class="meta-chip-icon" />
+                  <span>{{ userProfileData.city }}</span>
                 </div>
                 <span v-if="userProfileData?.description" class="user-description">
                   {{ userProfileData.description }}
@@ -153,6 +156,7 @@ import MyButton from '@/components/UI/MyButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import useModalStore from '@/stores/modals'
 import PostList from '../components/PostList.vue'
+import StarIcon from '@/assets/icons/StarIcon.vue'
 import { computed, ref, watch, type Component } from 'vue'
 import CreatePostDialog from '../components/CreatePostDialog.vue'
 import MyAvatar from '@/components/MyAvatar.vue'
@@ -167,6 +171,7 @@ import LocationIcon from '@/assets/icons/LocationIcon.vue'
 import { useI18n } from 'vue-i18n'
 import { useNotification } from '@kyvg/vue3-notification'
 import OpenPostDialog from '@/components/OpenPostDialog.vue'
+import { apiFetch } from '@/api/apiFetch'
 
 const { t } = useI18n()
 const modalStore = useModalStore()
@@ -215,11 +220,15 @@ const postsQuantity = ref(0)
 const getLength = (data: number) => (postsQuantity.value = data)
 
 const { notify } = useNotification()
-function click() {
-  notify({
-    title: 'Много запросов',
-    text: 'Подождите ответ сервера',
-    type: 'warn',
+async function click() {
+  // notify({
+  //   title: 'Много запросов',
+  //   text: 'Подождите ответ сервера',
+  //   type: 'warn',
+  // })
+  const response = await apiFetch(`/api/admin/titles`, {
+    method: 'POST',
+    body: JSON.stringify({ title_name: 'Meow :3', description: '50 rate' }),
   })
 }
 watch(
@@ -350,19 +359,40 @@ watch(
 .meta-item,
 .meta-chip {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  align-items: end;
+  gap: 3px;
   font-size: 14px;
+  text-transform: capitalize;
   color: var(--text-secondary);
 }
 
 .meta-chip {
-  padding: 6px 10px;
+  // padding: 6px 10px;
   border-radius: 999px;
-  background: var(--chip-bg);
+  // background: var(--chip-bg);
   color: var(--chip-text);
+  width: fit-content;
+}
+.title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  white-space: nowrap;
 }
 
+.title-badge-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
 .meta-item-icon,
 .meta-chip-icon {
   flex-shrink: 0;

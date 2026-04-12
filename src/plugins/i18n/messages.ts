@@ -103,6 +103,7 @@ export const messages = {
       fav_brands: 'Favorite brands',
       avatar: 'Profile avatar',
       details: 'Profile details',
+      title: 'Title',
     },
     accountSettings: {
       title: 'Account settings',
@@ -158,6 +159,12 @@ export const messages = {
       comment_text: 'commented your publication',
       like_text: 'liked your publication',
       rate_text: 'rated your publication as ',
+      congratulations_title: 'Congratulations!',
+      achievement_text: 'Received new Title ',
+      achievement_10_posts_content: 'You have earned a new Title for publishing 10 posts!',
+      achievement_reg_content: 'You have earned a new Title for registration!',
+      achievement_100_likes_content: 'You have earned a new Title for 100 likes on your posts!',
+      achievement_50_rated_content: 'You have earned a new Title for rate 50 publications!',
     },
   },
   ru: {
@@ -269,6 +276,7 @@ export const messages = {
       fav_brands: 'Любимые бренды',
       avatar: 'Аватар профиля',
       details: 'Детали профиля',
+      title: 'Титул',
     },
 
     categories: {
@@ -326,6 +334,12 @@ export const messages = {
       comment_text: 'оставил комментарий под вашей публикацией',
       like_text: 'понравилась ваша публикация',
       rate_text: 'оценил вашу публикацию на ',
+      congratulations_title: 'Поздравляем!',
+      achievement_text: 'Получен новый Титул ',
+      achievement_10_posts_content: 'Вы заработали новый Титул за публикацию 10 постов!',
+      achievement_reg_content: 'Вы заработали новый Титул за регистрацию!',
+      achievement_100_likes_content: 'Вы заработали новый Титул за 100 лайков на публикациях!',
+      achievement_50_rated_content: 'Вы заработали новый Титул за оценку 50 публикаций!',
     },
   },
 }
