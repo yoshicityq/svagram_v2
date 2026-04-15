@@ -176,6 +176,8 @@ import * as yup from 'yup'
 import { useForm } from 'vee-validate'
 import { useI18n } from 'vue-i18n'
 import LogoIcon from '@/assets/icons/LogoIcon.vue'
+import { useNotification } from '@kyvg/vue3-notification'
+import { connectWs, getWs } from '@/services/ws'
 
 const router = useRouter()
 const form = useTemplateRef('form')
@@ -199,6 +201,7 @@ const { errors, defineField } = useForm({
 
 const [username, usernameAttrs] = defineField('username', { validateOnModelUpdate: false })
 const [password, passwordAttrs] = defineField('password', { validateOnModelUpdate: false })
+const { notify } = useNotification()
 
 async function login() {
   if (isLoading.value) return
@@ -219,6 +222,7 @@ async function login() {
     const ok = await loginUser(formData)
     if (ok) {
       router.push('/feed')
+      connectWs()
     } else {
       serverError.value = t('validation.invalid_credentials')
     }

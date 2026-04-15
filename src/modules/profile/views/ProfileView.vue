@@ -52,6 +52,7 @@
       <div class="header-and-buttons">
         <div class="header-info">
           <div class="user-info-block">
+            <UserOnline :is-online="profileStore.isOpenedUserOnline" />
             <MyAvatar :username="username" size="large" />
 
             <div class="user-info">
@@ -157,7 +158,7 @@ import { useRoute, useRouter } from 'vue-router'
 import useModalStore from '@/stores/modals'
 import PostList from '../components/PostList.vue'
 import StarIcon from '@/assets/icons/StarIcon.vue'
-import { computed, ref, watch, type Component } from 'vue'
+import { computed, onBeforeMount, onMounted, ref, watch, type Component } from 'vue'
 import CreatePostDialog from '../components/CreatePostDialog.vue'
 import MyAvatar from '@/components/MyAvatar.vue'
 import { getProfileData } from '@/api/apiData'
@@ -172,10 +173,14 @@ import { useI18n } from 'vue-i18n'
 import { useNotification } from '@kyvg/vue3-notification'
 import OpenPostDialog from '@/components/OpenPostDialog.vue'
 import { apiFetch } from '@/api/apiFetch'
+import { closeWs, getWs, sendWsMessage } from '@/services/ws'
+import UserOnline from '@/components/UserOnline.vue'
+import { useProfileStore } from '@/stores/profile'
 
 const { t } = useI18n()
 const modalStore = useModalStore()
 const authStore = useAuthStore()
+const profileStore = useProfileStore()
 const route = useRoute()
 const router = useRouter()
 const username = ref(route.params.username as string)
@@ -221,16 +226,13 @@ const getLength = (data: number) => (postsQuantity.value = data)
 
 const { notify } = useNotification()
 async function click() {
-  // notify({
-  //   title: 'Много запросов',
-  //   text: 'Подождите ответ сервера',
-  //   type: 'warn',
-  // })
-  const response = await apiFetch(`/api/admin/titles`, {
-    method: 'POST',
-    body: JSON.stringify({ title_name: 'Meow :3', description: '50 rate' }),
+  notify({
+    title: 'qq',
+    text: 'qq',
+    type: '',
   })
 }
+
 watch(
   () => route.query.post,
   (newPost) => {
@@ -263,6 +265,7 @@ watch(
       if (data) {
         userProfileData.value = data.user
         userPermissionData.value = data.permissions
+        sendWsMessage({ type: 'online-check', userId: userProfileData.value.id })
       } else {
         isNotFound.value = true
       }
@@ -309,6 +312,7 @@ watch(
   display: flex;
   align-items: stretch;
   gap: 20px;
+  position: relative;
 }
 
 .user-info {

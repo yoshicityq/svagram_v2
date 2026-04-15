@@ -16,8 +16,8 @@
                 "
               />
               <div class="notification-content">
-                <div class="notification-title" v-html="props.item.title" />
-                <div v-html="props.item.text" class="notification-text" />
+                <div class="notification-title" v-html="$t(props.item.title!)" />
+                <div v-html="$t(props.item.text!)" class="notification-text" />
               </div>
             </button>
           </div>
@@ -32,14 +32,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount } from 'vue'
+import { computed, onBeforeMount, onBeforeUpdate, onMounted } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from './stores/settings'
 import { useI18n } from 'vue-i18n'
-import { Notifications } from '@kyvg/vue3-notification'
+import { Notifications, useNotification } from '@kyvg/vue3-notification'
 import SuccessIcon from './assets/icons/SuccessIcon.vue'
 import ErrorIcon from './assets/icons/ErrorIcon.vue'
 import WarningIcon from './assets/icons/WarningIcon.vue'
+import { getWs } from './services/ws'
 const route = useRoute()
 const settingsStore = useSettingsStore()
 const layout = computed(() => route.meta.layout)

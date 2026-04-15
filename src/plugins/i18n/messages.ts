@@ -165,6 +165,15 @@ export const messages = {
       achievement_reg_content: 'You have earned a new Title for registration!',
       achievement_100_likes_content: 'You have earned a new Title for 100 likes on your posts!',
       achievement_50_rated_content: 'You have earned a new Title for rate 50 publications!',
+
+      system_title: 'System',
+      sm_welcome_title: 'Hi Bro',
+      sm_welcome_text: 'Nice to see you',
+      sm_like_text: 'Sb liked your post',
+      sm_rate_text: 'Sb rated your post',
+      sm_comment_text: 'Sb commented your post',
+      sm_post_success_text: 'Publication successfully posted',
+      sm_post_error_text: 'Error during posting',
     },
   },
   ru: {
@@ -340,6 +349,15 @@ export const messages = {
       achievement_reg_content: 'Вы заработали новый Титул за регистрацию!',
       achievement_100_likes_content: 'Вы заработали новый Титул за 100 лайков на публикациях!',
       achievement_50_rated_content: 'Вы заработали новый Титул за оценку 50 публикаций!',
+
+      system_title: 'Система',
+      sm_welcome_title: 'Ку Бро',
+      sm_welcome_text: 'Рады тебя видеть',
+      sm_like_text: 'Кому-то понравился твой пост',
+      sm_rate_text: 'Кто-то оценил твой пост',
+      sm_comment_text: 'Кто-то прокомментировал твой пост',
+      sm_post_success_text: 'Пост успешно опубликован',
+      sm_post_error_text: 'Ошибка при публикации поста',
     },
   },
 }

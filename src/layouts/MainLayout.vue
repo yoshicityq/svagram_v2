@@ -9,6 +9,7 @@
 
 <script setup>
 import MainSidebar from '@/modules/sidebar/components/MainSidebar.vue'
+import { onRenderTriggered } from 'vue'
 </script>
 
 <style scoped lang="scss">

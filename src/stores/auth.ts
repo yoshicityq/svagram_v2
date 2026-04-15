@@ -1,4 +1,5 @@
 import { apiFetch } from '@/api/apiFetch'
+import { closeWs, connectWs } from '@/services/ws'
 import { defineStore } from 'pinia'
 
 type User = {
@@ -29,6 +30,7 @@ const useAuthStore = defineStore('auth', {
     clearSession() {
       this.accessToken = null
       this.user = null
+      closeWs()
     },
     async init() {
       try {
@@ -51,6 +53,7 @@ const useAuthStore = defineStore('auth', {
         if (res.ok) {
           const data = (await res.json()) as { user: User }
           this.user = data.user
+          connectWs()
         } else {
           this.clearSession()
         }

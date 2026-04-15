@@ -17,7 +17,6 @@ const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
 const crypto = require('crypto')
-
 const RefreshSession = require('./db.cjs').RefreshSession
 app.set('port', process.env.PORT || 3001)
 app.use(cookieParser())
@@ -418,6 +417,7 @@ app.post('/posts/:id/comments', authRequired, (req, res, next) => {
   if (parent_comment_id !== null && !Number.isInteger(parent_comment_id)) {
     return res.status(400).json({ message: 'Invalid parentCommentId' })
   }
+  const sendToUser = req.app.get('sendToUser')
 
   Post.find(postId, (e0, post) => {
     if (e0) return next(e0)
@@ -491,6 +491,14 @@ app.post('/posts/:id/comments', authRequired, (req, res, next) => {
                     return finishResponse()
                   },
                 )
+                sendToUser(owner.id, {
+                  type: 'notification',
+                  notification: {
+                    title: 'notification.comment_title',
+                    text: 'notification.sm_comment_text',
+                    type: '',
+                  },
+                })
               })
             })
           })
@@ -822,6 +830,7 @@ app.post('/posts/create', authRequired, upload.single('image'), (req, res, next)
 
     // 3) автор берётся из JWT (вы так и делали в /me)
     const username = req.user.username
+    const sendToUser = req.app.get('sendToUser')
 
     Post.create(
       {
@@ -890,6 +899,14 @@ app.post('/posts/create', authRequired, upload.single('image'), (req, res, next)
                       return res.status(201).json({ ok: true, id: created.id })
                     },
                   )
+                  sendToUser(req.user.id, {
+                    type: 'notification',
+                    notification: {
+                      title: 'notification.system_title',
+                      text: 'notification.achievement_text',
+                      type: '',
+                    },
+                  })
                 })
               } else {
                 // Если титул уже есть, просто возвращаем успешный ответ
@@ -929,6 +946,7 @@ app.post('/posts/:id/like', authRequired, (req, res, next) => {
 
       // Финальный ответ клиенту — вызываем после всей фоновой работы
       const respond = () => res.json({ ok: true, liked: result.liked, likes: result.likes })
+      const sendToUser = req.app.get('sendToUser')
 
       // Проверка на достижение «100 лайков на одном посте» — только при постановке лайка
       const checkAchievement = (cb) => {
@@ -988,6 +1006,14 @@ app.post('/posts/:id/like', authRequired, (req, res, next) => {
             })
           },
         )
+        sendToUser(owner.id, {
+          type: 'notification',
+          notification: {
+            title: 'notification.like_title',
+            text: 'notification.sm_like_text',
+            type: '',
+          },
+        })
       } else {
         Notification.deleteByKey(
           {
@@ -1034,6 +1060,7 @@ app.post('/posts/:id/rating', authRequired, (req, res, next) => {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return res.status(400).json({ message: 'rating must be integer 1..5' })
   }
+  const sendToUser = req.app.get('sendToUser')
 
   Post.find(postId, (e0, post) => {
     if (e0) return next(e0)
@@ -1081,6 +1108,14 @@ app.post('/posts/:id/rating', authRequired, (req, res, next) => {
             return finishResponse()
           },
         )
+        sendToUser(owner.id, {
+          type: 'notification',
+          notification: {
+            title: 'notification.rate_title',
+            text: 'notification.sm_rate_text',
+            type: '',
+          },
+        })
       })
     })
   })
@@ -1346,6 +1381,7 @@ app.use((err, req, res, next) => {
   next(err)
 })
 
-app.listen(app.get('port'), () => {
-  console.log(`Web app available at port ${app.get('port')}`)
-})
+// app.listen(app.get('port'), () => {
+//   console.log(`Web app available at port ${app.get('port')}`)
+// })
+module.exports = app

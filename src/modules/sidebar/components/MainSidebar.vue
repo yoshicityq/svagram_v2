@@ -99,6 +99,7 @@ import useAuthStore from '@/stores/auth'
 import { logoutUser } from '../api/actions'
 import NotificationsIcon from '@/assets/icons/NotificationsIcon.vue'
 import { apiFetch } from '@/api/apiFetch'
+import { closeWs } from '@/services/ws'
 
 const sidebarStore = useSidebarStore()
 const authStore = useAuthStore()
@@ -109,6 +110,7 @@ const username = computed(() => authStore.user?.username as string)
 async function logout() {
   try {
     const response = await logoutUser()
+    closeWs()
     if (response) {
       router.push('/auth')
     }

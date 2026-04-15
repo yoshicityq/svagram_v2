@@ -279,7 +279,7 @@ watch(
 }
 
 .post-modal {
-  width: min(1120px, 100%);
+  width: min(fit-content, 100%);
   height: min(760px, calc(100vh - 48px));
   display: grid;
   grid-template-columns: minmax(380px, 1fr) 380px;
@@ -308,9 +308,9 @@ watch(
 }
 
 .post-modal__image {
-  width: 100%;
+  // width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   background: var(--image-bg);
 }
