@@ -2,15 +2,7 @@
   <form class="form" ref="form" @submit.prevent="sendData">
     <div class="form_header">
       <div class="brand">
-        <div class="brand-icon">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-            <rect width="40" height="40" rx="12" fill="var(--primary)" />
-            <path
-              d="M20 10c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10-4.477-10-10-10zm0 3a3.5 3.5 0 110 7 3.5 3.5 0 010-7zm0 14.5c-2.97 0-5.58-1.51-7.12-3.81a7.028 7.028 0 0114.24 0A8.462 8.462 0 0120 27.5z"
-              fill="white"
-            />
-          </svg>
-        </div>
+        <RegIcon />
         <h1 class="brand-title">{{ $t('title.reg_title') }}</h1>
         <p class="brand-subtitle">{{ $t('description.reg_description') }}</p>
       </div>
@@ -20,20 +12,7 @@
       <!-- Username -->
       <div class="field" :class="{ 'field--error': errors.username }">
         <div class="input-wrapper">
-          <svg
-            class="input-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
+          <ProfileIcon />
           <input
             name="username"
             type="text"
@@ -51,28 +30,16 @@
       <!-- City -->
       <div class="field" :class="{ 'field--error': errors.city }">
         <div class="input-wrapper">
-          <svg
-            class="input-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-            <circle cx="12" cy="10" r="3" />
-          </svg>
-          <input
+          <!-- <LocationIcon /> -->
+          <!-- <input
             name="city"
             type="text"
             :placeholder="$t('placeholder.city')"
             class="form-input"
             v-model="city"
             v-bind="cityAttrs"
-          />
+          /> -->
+          <CitySelect :model-value="city" @update:model-value="city = $event" v-bind="cityAttrs" />
         </div>
         <Transition name="error-fade">
           <div v-if="errors.city" class="field-error">{{ errors.city }}</div>
@@ -82,20 +49,7 @@
       <!-- Email -->
       <div class="field" :class="{ 'field--error': errors.email }">
         <div class="input-wrapper">
-          <svg
-            class="input-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="2" y="4" width="20" height="16" rx="2" />
-            <path d="M22 4l-10 8L2 4" />
-          </svg>
+          <MailIcon />
           <input
             name="email"
             type="text"
@@ -113,20 +67,7 @@
       <!-- Password -->
       <div class="field" :class="{ 'field--error': errors.password }">
         <div class="input-wrapper">
-          <svg
-            class="input-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
+          <LockedIcon />
           <input
             name="password"
             :type="showPassword ? 'text' : 'password'"
@@ -143,37 +84,9 @@
             tabindex="-1"
           >
             <!-- Eye open -->
-            <svg
-              v-if="!showPassword"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
+            <EyeOnIcon v-if="!showPassword" />
             <!-- Eye closed -->
-            <svg
-              v-else
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path
-                d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
-              />
-              <line x1="1" y1="1" x2="23" y2="23" />
-            </svg>
+            <EyeOffIcon v-else />
           </button>
         </div>
 
@@ -222,20 +135,7 @@
         class="back-btn"
         :disabled="isLoading"
       >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          style="margin-right: 4px"
-        >
-          <line x1="19" y1="12" x2="5" y2="12" />
-          <polyline points="12 19 5 12 12 5" />
-        </svg>
+        <BackIcon />
         {{ $t('buttons.back') }}
       </MyButton>
     </div>
@@ -252,6 +152,15 @@ import { toTypedSchema } from '@vee-validate/yup'
 import * as yup from 'yup'
 import { useI18n } from 'vue-i18n'
 import { apiFetch } from '@/api/apiFetch'
+import ProfileIcon from '@/assets/icons/ProfileIcon.vue'
+import LocationIcon from '@/assets/icons/LocationIcon.vue'
+import MailIcon from '@/assets/icons/MailIcon.vue'
+import LockedIcon from '@/assets/icons/utils/LockedIcon.vue'
+import EyeOnIcon from '@/assets/icons/utils/EyeOnIcon.vue'
+import EyeOffIcon from '@/assets/icons/utils/EyeOffIcon.vue'
+import BackIcon from '@/assets/icons/utils/BackIcon.vue'
+import RegIcon from '@/assets/icons/RegIcon.vue'
+import CitySelect from '@/components/CitySelect.vue'
 
 const router = useRouter()
 const form = useTemplateRef('form')
@@ -348,6 +257,7 @@ async function sendData() {
 
   try {
     const formData = new FormData(form.value as HTMLFormElement)
+    formData.set('city', 'Vdk')
     const ok = await registerUser(formData)
 
     if (ok) {
@@ -388,10 +298,6 @@ async function sendData() {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-}
-
-.brand-icon {
-  margin-bottom: 4px;
 }
 
 .brand-title {

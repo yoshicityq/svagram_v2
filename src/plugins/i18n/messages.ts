@@ -25,6 +25,8 @@ export const messages = {
       delete: 'Delete',
       notifications: 'Notifications',
       all_read: 'Mark all as read',
+      loading: 'Loading...',
+      go_to_feed: 'Go to feed',
     },
     modals: {
       create_new_post: 'Creating a new post',
@@ -39,6 +41,7 @@ export const messages = {
       username: 'Username',
       city: 'City',
       email: 'Email',
+      choose_city: 'Choose your city',
     },
     password_strength: {
       weak: 'Weak password',
@@ -94,6 +97,8 @@ export const messages = {
       city: 'City',
       description: 'Description',
       fav_brands: 'Favorite brands',
+      user_not_found: 'User not found',
+      user_not_found_hint: 'Looks like there is no user with that name yet',
     },
 
     editProfile: {
@@ -203,6 +208,8 @@ export const messages = {
       delete: 'Удалить',
       open: 'Открыть',
       all_read: 'Прочитать все',
+      loading: 'Загрузка...',
+      go_to_feed: 'Вернуться к ленте',
     },
     modals: {
       create_new_post: 'Создание нового поста',
@@ -217,6 +224,7 @@ export const messages = {
       username: 'Имя пользователя',
       city: 'Город',
       email: 'Почта',
+      choose_city: 'Выберите город',
     },
     password_strength: {
       weak: 'Слабый пароль',
@@ -276,6 +284,8 @@ export const messages = {
       city: 'Город',
       description: 'Описание',
       fav_brands: 'Любимые бренды',
+      user_not_found: 'Пользователь не найден',
+      user_not_found_hint: 'Похоже, что пользователя с таким именем еще нет',
     },
 
     editProfile: {

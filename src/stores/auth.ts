@@ -1,5 +1,6 @@
 import { apiFetch } from '@/api/apiFetch'
 import { closeWs, connectWs } from '@/services/ws'
+import { useNotification } from '@kyvg/vue3-notification'
 import { defineStore } from 'pinia'
 
 type User = {
@@ -11,7 +12,7 @@ type UserAvatar = {
   hasAvatar: boolean
   avatarUrl: string | null
 }
-
+const { notify } = useNotification()
 const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: null as string | null,

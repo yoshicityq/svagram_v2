@@ -1,51 +1,6 @@
 <template>
-  <div v-if="isLoading" class="profile-view">
-    <div class="header">
-      <div class="header-and-buttons">
-        <div class="header-info">
-          <div class="user-info-block">
-            <div class="skeleton skeleton-avatar" />
-            <div class="user-info">
-              <div class="user-info__main">
-                <div class="skeleton skeleton-username" />
-                <div class="skeleton skeleton-description" />
-              </div>
-              <div class="user-meta-row">
-                <div class="skeleton skeleton-meta" />
-                <div class="skeleton skeleton-meta" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div v-else-if="isNotFound" class="profile-view">
-    <div class="not-found">
-      <svg
-        class="not-found-icon"
-        width="48"
-        height="48"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <path d="M16 16s-1.5-2-4-2-4 2-4 2" />
-        <line x1="9" y1="9" x2="9.01" y2="9" />
-        <line x1="15" y1="9" x2="15.01" y2="9" />
-      </svg>
-      <h2 class="not-found-title">{{ $t('profilePage.user_not_found') }}</h2>
-      <p class="not-found-text">{{ $t('profilePage.user_not_found_hint') }}</p>
-      <MyButton @click="router.push('/feed')">
-        {{ $t('buttons.go_to_feed') }}
-      </MyButton>
-    </div>
-  </div>
+  <ProfileSkeleton v-if="isLoading" />
+  <UserNotFound v-else-if="isNotFound" />
 
   <div v-else class="profile-view">
     <div class="header">
@@ -87,38 +42,20 @@
         </div>
 
         <div v-if="userPermissionData?.isOwner" class="actions-block">
-          <MyButton @click="modalStore.toggleCreateDialog()" class="action-btn">
-            <svg
-              class="action-btn-icon"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+          <MyButton
+            :icon="PlusIcon"
+            size="xs"
+            color="transparent"
+            @click="modalStore.toggleCreateDialog()"
+          >
             {{ $t('buttons.create_post') }}
           </MyButton>
-          <MyButton @click="router.push({ name: 'edit' })" class="action-btn">
-            <svg
-              class="action-btn-icon"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
+          <MyButton
+            :icon="EditIcon"
+            size="xs"
+            color="transparent"
+            @click="router.push({ name: 'edit' })"
+          >
             {{ $t('buttons.edit_profile') }}
           </MyButton>
           <MyButton @click="click">Check</MyButton>
@@ -135,8 +72,8 @@
             <component
               :is="tab.icon"
               class="nav-tab-icon"
-              :is-liked="tab.id === 'likes' ? false : undefined"
-              :is-section-btn="tab.id === 'likes' ? true : undefined"
+              :is-liked="tab.id === 'liked' ? false : undefined"
+              :is-section-btn="tab.id === 'liked' ? true : undefined"
             />
           </button>
         </div>
@@ -176,6 +113,10 @@ import { apiFetch } from '@/api/apiFetch'
 import { closeWs, getWs, sendWsMessage } from '@/services/ws'
 import UserOnline from '@/components/UserOnline.vue'
 import { useProfileStore } from '@/stores/profile'
+import EditIcon from '@/assets/icons/utils/EditIcon.vue'
+import PlusIcon from '@/assets/icons/PlusIcon.vue'
+import ProfileSkeleton from '../components/ProfileSkeleton.vue'
+import UserNotFound from '../components/UserNotFound.vue'
 
 const { t } = useI18n()
 const modalStore = useModalStore()
@@ -194,23 +135,25 @@ const userProfileData = ref<User | null>(null)
 const userPermissionData = ref<Permission | null>(null)
 const isLoading = ref(true)
 const isNotFound = ref(false)
-const activeTab = ref('posts')
+const activeTab = ref(
+  route.name === 'posts' ? 'posts' : route.name === 'posts_liked' ? 'liked' : 'rated',
+)
 type Tab = {
   id: string
   icon: Component
   path: string
 }
 const tabs: Tab[] = [
-  { id: 'posts', icon: PostsIcon, path: 'Profile posts' },
-  { id: 'likes', icon: LikesIcon, path: 'Liked posts' },
-  { id: 'estimated', icon: EstimatedPostsIcon, path: 'Rated posts' },
+  { id: 'posts', icon: PostsIcon, path: 'posts' },
+  { id: 'liked', icon: LikesIcon, path: 'posts_liked' },
+  { id: 'rated', icon: EstimatedPostsIcon, path: 'posts_rated' },
 ]
 
 const workableTabs = computed(() => {
   return tabs.filter((tab) => {
     if (!userPermissionData.value?.isOwner) {
-      if (tab.id === 'likes' && userPermissionData.value?.canViewLikedPosts) return tab
-      if (tab.id === 'estimated' && userPermissionData.value?.canViewRatedPosts) return tab
+      if (tab.id === 'liked' && userPermissionData.value?.canViewLikedPosts) return tab
+      if (tab.id === 'rated' && userPermissionData.value?.canViewRatedPosts) return tab
       if (tab.id === 'posts') return tab
     } else return tab
   })
@@ -226,10 +169,12 @@ const getLength = (data: number) => (postsQuantity.value = data)
 
 const { notify } = useNotification()
 async function click() {
-  notify({
-    title: 'qq',
-    text: 'qq',
-    type: '',
+  await apiFetch('/api/admin/titles', {
+    method: 'POST',
+    body: JSON.stringify({
+      title_name: 'Fame ',
+      description: 'qqq',
+    }),
   })
 }
 
@@ -412,12 +357,12 @@ watch(
   min-width: 180px;
 }
 
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
+// .action-btn {
+//   display: inline-flex;
+//   align-items: center;
+//   justify-content: center;
+//   gap: 8px;
+// }
 
 .action-btn-icon {
   flex-shrink: 0;

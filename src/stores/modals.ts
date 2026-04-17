@@ -5,6 +5,7 @@ const useModalStore = defineStore('modalStore', {
   state: () => ({
     isCreateDialogOpen: false,
     isPostDialogOpen: false,
+    isAvatarModalOpen: false,
     openedPostId: null as number | string | null,
     openedPostRating: null as PostRating | null,
     openedPostLikes: null as PostLikes | null,
@@ -16,6 +17,9 @@ const useModalStore = defineStore('modalStore', {
     },
     togglePostDialog() {
       this.isPostDialogOpen = !this.isPostDialogOpen
+    },
+    toggleAvatarModal() {
+      this.isAvatarModalOpen = !this.isAvatarModalOpen
     },
   },
 })

@@ -111,7 +111,7 @@ function initWs(server) {
                 notification: {
                   title: 'notification.sm_welcome_title',
                   text: 'notification.sm_welcome_text',
-                  type: '',
+                  type: 'system',
                 },
               }),
             )

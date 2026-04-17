@@ -5,6 +5,7 @@ const useSidebarStore = defineStore('sidebar', {
   state: () => ({
     isOpen: true,
     isSearchActive: false,
+    unreadCount: 0,
   }),
   getters: {},
   actions: {
@@ -15,6 +16,11 @@ const useSidebarStore = defineStore('sidebar', {
     toggleSearch() {
       if (!this.isOpen) this.isOpen = true
       this.isSearchActive = !this.isSearchActive
+    },
+    async getUnreadCount() {
+      const response = await apiFetch('/notifications/unread-count')
+      const data = await response.json()
+      this.unreadCount = data.unreadCount
     },
   },
   persist: {

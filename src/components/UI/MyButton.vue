@@ -9,7 +9,10 @@
   >
     <component :is="icon" v-if="icon" class="my-button__icon" :class="{ active: active }" />
     <span v-if="isSidebarOpened" class="my-button__label">
-      <slot />
+      <slot></slot>
+    </span>
+    <span v-if="$slots.chip" class="my-button__chip">
+      <slot name="chip"></slot>
     </span>
   </button>
 </template>
@@ -50,10 +53,11 @@ defineProps({
   box-shadow: var(--shadow-sm);
   cursor: pointer;
 
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
 
   font-weight: 600;
   font-family: inherit;
@@ -105,7 +109,23 @@ defineProps({
   display: inline-flex;
   align-items: center;
 }
-
+.my-button__chip {
+  position: absolute;
+  right: 13%;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  height: 20px;
+  // position: absolute;
+  font-size: 11px;
+  background-color: var(--accent);
+  border: 1px solid var(--border-primary);
+  color: var(--text-on-accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 /* default */
 .my-button--default {
   border-color: var(--button-border);
@@ -212,7 +232,9 @@ defineProps({
   padding-right: 0;
   aspect-ratio: 1 / 1;
 }
-
+.my-button--icon-only .my-button__chip {
+  right: -10%;
+}
 .my-button--icon-only.my-button--xs {
   width: 32px;
 }

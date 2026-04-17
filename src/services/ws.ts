@@ -1,5 +1,7 @@
+import { addActivityListeners, resetInactivityTimer } from '@/helpers/activity'
 import useAuthStore from '@/stores/auth'
 import { useProfileStore } from '@/stores/profile'
+import useSidebarStore from '@/stores/sidebar'
 import { useNotification } from '@kyvg/vue3-notification'
 
 let socket: WebSocket | null = null
@@ -16,7 +18,7 @@ export function connectWs() {
 
   const profileStore = useProfileStore()
   const authStore = useAuthStore()
-
+  const sidebarStore = useSidebarStore()
   //открыли соединение
   socket.onopen = () => {
     console.log('Connected to WS server')
@@ -26,10 +28,11 @@ export function connectWs() {
   }
 
   //получение сообщение с сервера
-  socket.onmessage = (event) => {
+  socket.onmessage = async (event) => {
     try {
       const data = JSON.parse(event.data)
       if ('notification' in data) {
+        await sidebarStore.getUnreadCount()
         notify({
           title: data.notification.title,
           text: data.notification.text,
@@ -70,5 +73,22 @@ export function closeWs() {
   if (socket) {
     socket.close()
     socket = null
+  }
+}
+
+export function handleActivity() {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    const authStore = useAuthStore()
+    if (!authStore.accessToken) {
+      return
+    }
+    connectWs() // Восстанавливаем соединение при активности
+  }
+  resetInactivityTimer() // Сбрасываем таймер при активности
+}
+
+export function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    handleActivity() // Восстановить соединение при возвращении вкладки
   }
 }

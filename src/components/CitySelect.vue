@@ -1,12 +1,13 @@
 <template>
   <div class="city-select" ref="citySelectRef">
     <div class="field" :class="{ 'field--active': isOpen }">
+      <component :is="LocationIcon" />
       <input
         v-model.trim="inputValue"
         type="text"
         class="field__input"
         @focus="isOpen = true"
-        placeholder="Choose city"
+        :placeholder="$t('placeholder.choose_city')"
       />
 
       <button
@@ -43,6 +44,7 @@
 <script setup lang="ts">
 import ChevronIcon from '@/assets/icons/ChevronIcon.vue'
 import CrossIcon from '@/assets/icons/CrossIcon.vue'
+import LocationIcon from '@/assets/icons/LocationIcon.vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -53,6 +55,7 @@ const props = defineProps({
   modelValue: {
     type: String,
     required: true,
+    default: '',
   },
 })
 
@@ -123,6 +126,7 @@ function handleClickOutside(event: MouseEvent) {
   const target = event.target as Node
 
   if (citySelectRef.value && !citySelectRef.value.contains(target)) {
+    if (inputValue.value) emit('update:modelValue', inputValue.value)
     isOpen.value = false
   }
 }

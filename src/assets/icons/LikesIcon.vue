@@ -6,7 +6,7 @@
       stroke-linecap="round"
       stroke-linejoin="round"
       :stroke="color"
-      :class="{ liked: isLiked, sec_icon__color: isSectionBtn }"
+      :class="['icon', { liked: isLiked, sec_icon__color: isSectionBtn }]"
     />
   </svg>
   <!-- :fill="isLiked ? color : ''" -->
@@ -16,7 +16,7 @@
 const props = defineProps({
   color: {
     type: String,
-    default: 'black',
+    default: '',
   },
   isLiked: {
     type: Boolean,
@@ -30,6 +30,9 @@ const props = defineProps({
 </script>
 
 <style scoped>
+.icon {
+  stroke: var(--accent);
+}
 .liked {
   fill: rgba(145, 59, 224, 0.575);
 }

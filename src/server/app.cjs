@@ -496,7 +496,7 @@ app.post('/posts/:id/comments', authRequired, (req, res, next) => {
                   notification: {
                     title: 'notification.comment_title',
                     text: 'notification.sm_comment_text',
-                    type: '',
+                    type: 'comment',
                   },
                 })
               })
@@ -904,7 +904,7 @@ app.post('/posts/create', authRequired, upload.single('image'), (req, res, next)
                     notification: {
                       title: 'notification.system_title',
                       text: 'notification.achievement_text',
-                      type: '',
+                      type: 'system',
                     },
                   })
                 })
@@ -1011,7 +1011,7 @@ app.post('/posts/:id/like', authRequired, (req, res, next) => {
           notification: {
             title: 'notification.like_title',
             text: 'notification.sm_like_text',
-            type: '',
+            type: 'like',
           },
         })
       } else {
@@ -1113,7 +1113,7 @@ app.post('/posts/:id/rating', authRequired, (req, res, next) => {
           notification: {
             title: 'notification.rate_title',
             text: 'notification.sm_rate_text',
-            type: '',
+            type: 'rate',
           },
         })
       })

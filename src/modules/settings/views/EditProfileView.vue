@@ -39,7 +39,7 @@
                 {{ $t('buttons.upload_avatar') }}
               </MyButton>
 
-              <MyButton>
+              <MyButton @click.prevent="openAvatarList">
                 {{ $t('buttons.choose_from_posts') }}
               </MyButton>
 
@@ -122,6 +122,7 @@
       </form>
     </div>
   </div>
+  <AvatarListModal :username="userData?.username!" @select="chooseFromPosts($event.imageUrl)" />
 </template>
 
 <script setup lang="ts">
@@ -136,10 +137,13 @@ import { apiFetch } from '@/api/apiFetch'
 import type { User } from '@/types/user'
 import { getProfileData, getProfileImg } from '@/api/apiData'
 import TitleSelect from '../components/TitleSelect.vue'
+import AvatarListModal from '../components/AvatarListModal.vue'
+import useModalStore from '@/stores/modals'
+import type { Post } from '@/types/post'
 
 const authStore = useAuthStore()
 const userData = ref<User | null>(null)
-const previewAvatar = ref<string | null>(null)
+const previewAvatar = ref<string | null | undefined>(null)
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const form = useTemplateRef('form')
@@ -163,6 +167,21 @@ const userAvatar = computed(() => {
 
   return previewAvatar.value
 })
+
+async function chooseFromPosts(url: string) {
+  cleanupPreview()
+  previewAvatar.value = `http://localhost:3000${url}`
+  selectedFile.value = await createFileFromUrl(url)
+}
+
+async function createFileFromUrl(url: string) {
+  const response = await apiFetch(url)
+  const blob = await response.blob()
+
+  const file = new File([blob], 'image.jpg', { type: 'image/jpeg' })
+  console.log(file)
+  return file
+}
 
 function openFileDialog() {
   fileInput.value?.click()
@@ -214,7 +233,10 @@ function removeBrand(index: number) {
     favoriteBrands.value.push('')
   }
 }
-
+const modalStore = useModalStore()
+function openAvatarList() {
+  modalStore.toggleAvatarModal()
+}
 async function sendData() {
   const formData = new FormData(form.value as HTMLFormElement)
 
@@ -265,6 +287,7 @@ watch(
       // console.log(data2)
       if (data) {
         userData.value = data.user
+        previewAvatar.value = await getProfileImg(authStore.user?.username as string)
         if (userData.value.titleId) {
           title.value = {
             id: userData.value.titleId,
@@ -274,7 +297,6 @@ watch(
           title.value = null
         }
       }
-      previewAvatar.value = await getProfileImg(authStore.user?.username as string)
 
       if (userData.value) {
         description.value = userData.value.description ?? ''
