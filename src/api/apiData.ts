@@ -2,13 +2,23 @@ import type { User } from '@/types/user'
 import { apiFetch } from './apiFetch'
 import type { Post, PostLikes, PostRating } from '@/types/post'
 
-export async function getProfileImg(username: string): Promise<string | null> {
-  const response = await apiFetch(`/users/${username}/avatar`)
-  if (!response.ok) return null
-  const blob = await response.blob()
-  const imgSource = URL.createObjectURL(blob)
-  return imgSource
+export async function getProfileImg(username: string): Promise<string | null | undefined> {
+  try {
+    const response = await apiFetch(`/users/${username}/avatar`)
+    if (response) {
+      if (response.status === 404) {
+        throw new Error('No avatar')
+      }
+      if (!response.ok) return null
+      const blob = await response.blob()
+      const imgSource = URL.createObjectURL(blob)
+      return imgSource
+    }
+  } catch (e) {
+    console.log(e)
+  }
 }
+
 type Permission = {
   isOwner: Boolean
   canViewPosts: Boolean
@@ -18,9 +28,17 @@ type Permission = {
 export async function getProfileData(
   username: string,
 ): Promise<{ user: User; permissions: Permission } | null> {
-  const response = await apiFetch(`/users/${username}`)
-  const data = await response.json()
-  return data
+  try {
+    const response = await apiFetch(`/users/${username}`)
+
+    if (response) {
+      const data = await response.json()
+      return data
+    }
+  } catch (e) {
+    console.log(e)
+  }
+  return null
 }
 
 export async function getUserPosts(username: string): Promise<Post[] | null> {

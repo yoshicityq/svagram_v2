@@ -32,8 +32,8 @@
 
 <script setup lang="ts">
 import ChevronIcon from '@/assets/icons/ChevronIcon.vue'
-import EnIcon from '@/assets/icons/EnIcon.vue'
-import RuIcon from '@/assets/icons/RuIcon.vue'
+import EnIcon from '@/assets/icons/lang/EnIcon.vue'
+import RuIcon from '@/assets/icons/lang/RuIcon.vue'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 

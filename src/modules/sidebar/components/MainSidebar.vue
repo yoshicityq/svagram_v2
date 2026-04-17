@@ -14,6 +14,7 @@
             :is-sidebar-opened="sidebarStore.isOpen"
             :icon="SearchIcon"
             @click="sidebarStore.toggleSearch"
+            color="transparent"
           >
             {{ $t('buttons.search') }}
           </MyButton>
@@ -22,6 +23,7 @@
             :is-sidebar-opened="sidebarStore.isOpen"
             :icon="FeedIcon"
             @click="router.push('/feed')"
+            color="transparent"
           >
             {{ $t('buttons.feed') }}
           </MyButton>
@@ -29,17 +31,19 @@
             :is-sidebar-opened="sidebarStore.isOpen"
             :icon="NotificationsIcon"
             @click="router.push('/notifications')"
+            color="transparent"
           >
             <div class="notifications-btn-content">
               {{ $t('buttons.notifications') }}
-              <div v-if="unreadCount > 0" class="notifications__count">
-                {{ unreadCount }}
-              </div>
             </div>
+            <template v-if="sidebarStore.unreadCount > 0" #chip>
+              {{ sidebarStore.unreadCount }}
+            </template>
           </MyButton>
           <MyButton
             :is-sidebar-opened="sidebarStore.isOpen"
             :icon="SettingsIcon"
+            color="transparent"
             @click="router.push('/settings')"
           >
             {{ $t('buttons.settings') }}
@@ -83,11 +87,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-import CloseSbIcon from '@/assets/icons/CloseSbIcon.vue'
-import FeedIcon from '@/assets/icons/FeedIcon.vue'
-import SearchIcon from '@/assets/icons/SearchIcon.vue'
-import SettingsIcon from '@/assets/icons/SettingsIcon.vue'
-import LogoutIcon from '@/assets/icons/LogoutIcon.vue'
+import CloseSbIcon from '@/assets/icons/sidebar/CloseSbIcon.vue'
+import FeedIcon from '@/assets/icons/sidebar/FeedIcon.vue'
+import SearchIcon from '@/assets/icons/sidebar/SearchIcon.vue'
+import SettingsIcon from '@/assets/icons/sidebar/SettingsIcon.vue'
+import LogoutIcon from '@/assets/icons/sidebar/LogoutIcon.vue'
 import LogoIcon from '@/assets/icons/LogoIcon.vue'
 
 import MyButton from '@/components/UI/MyButton.vue'
@@ -97,7 +101,7 @@ import SearchDialog from './SearchDialog.vue'
 import useSidebarStore from '@/stores/sidebar'
 import useAuthStore from '@/stores/auth'
 import { logoutUser } from '../api/actions'
-import NotificationsIcon from '@/assets/icons/NotificationsIcon.vue'
+import NotificationsIcon from '@/assets/icons/sidebar/NotificationsIcon.vue'
 import { apiFetch } from '@/api/apiFetch'
 import { closeWs } from '@/services/ws'
 
@@ -118,14 +122,8 @@ async function logout() {
     console.log(e)
   }
 }
-const unreadCount = ref(0)
-async function getUnreadCount() {
-  const response = await apiFetch('/notifications/unread-count')
-  const data = await response.json()
-  unreadCount.value = data.unreadCount
-}
 
-onMounted(() => getUnreadCount())
+onMounted(async () => await sidebarStore.getUnreadCount())
 </script>
 
 <style scoped lang="scss">
@@ -139,7 +137,7 @@ onMounted(() => getUnreadCount())
 }
 
 .sidebar-wrapper.closed {
-  width: 96px;
+  width: 100px;
   padding: 16px 10px;
 }
 
@@ -150,7 +148,7 @@ onMounted(() => getUnreadCount())
   flex-direction: column;
   gap: 20px;
   padding: 16px;
-  border: 1px solid var(--sidebar-border);
+  border: 0.5px solid var(--sidebar-border);
   border-radius: var(--radius-xl);
   background: var(--sidebar-bg);
   box-shadow: var(--card-shadow);
@@ -206,21 +204,6 @@ onMounted(() => getUnreadCount())
 }
 .notifications-btn-content {
   position: relative;
-  .notifications__count {
-    width: 20px;
-    height: 20px;
-    position: absolute;
-    font-size: 11px;
-    background-color: var(--accent);
-    border: 1px solid var(--border-primary);
-    color: var(--text-on-accent);
-    border-radius: 50%;
-    top: -4px;
-    right: -20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 }
 .footer {
   flex-shrink: 0;

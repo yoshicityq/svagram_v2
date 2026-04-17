@@ -165,8 +165,8 @@
 <script setup lang="ts">
 import { apiFetch } from '@/api/apiFetch'
 import ChevronIcon from '@/assets/icons/ChevronIcon.vue'
-import LockedIcon from '@/assets/icons/LockedIcon.vue'
-import UnlockedIcon from '@/assets/icons/UnlockedIcon.vue'
+import LockedIcon from '@/assets/icons/utils/LockedIcon.vue'
+import UnlockedIcon from '@/assets/icons/utils/UnlockedIcon.vue'
 import MyButton from '@/components/UI/MyButton.vue'
 import MySwitcher from '@/components/UI/MySwitcher.vue'
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'

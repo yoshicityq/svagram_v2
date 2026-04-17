@@ -64,8 +64,8 @@ import { computed } from 'vue'
 import LanguageSelect from '../components/LanguageSelect.vue'
 import { useSettingsStore } from '@/stores/settings'
 import MySwitcher from '@/components/UI/MySwitcher.vue'
-import MoonIcon from '@/assets/icons/MoonIcon.vue'
-import SunIcon from '@/assets/icons/SunIcon.vue'
+import MoonIcon from '@/assets/icons/utils/MoonIcon.vue'
+import SunIcon from '@/assets/icons/utils/SunIcon.vue'
 
 const settingsStore = useSettingsStore()
 const theme = computed({

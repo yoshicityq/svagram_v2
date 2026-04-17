@@ -234,8 +234,8 @@
 
 <script setup lang="ts">
 import { apiFetch } from '@/api/apiFetch'
-import SettingsIcon from '@/assets/icons/SettingsIcon.vue'
-import SystemIcon from '@/assets/icons/SystemIcon.vue'
+import SettingsIcon from '@/assets/icons/sidebar/SettingsIcon.vue'
+import SystemIcon from '@/assets/icons/notifications/SystemIcon.vue'
 import MyAvatar from '@/components/MyAvatar.vue'
 import MyLoader from '@/components/MyLoader.vue'
 import OpenPostDialog from '@/components/OpenPostDialog.vue'

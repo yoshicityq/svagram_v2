@@ -12,7 +12,7 @@ const router = {
   children: [
     {
       path: '',
-      name: 'Profile posts',
+      name: 'posts',
       props: (route: RouteLocationNormalizedTyped) => ({
         username: route.params.username,
         listType: '',
@@ -21,7 +21,7 @@ const router = {
     },
     {
       path: 'liked',
-      name: 'Liked posts',
+      name: 'posts_liked',
       props: (route: RouteLocationNormalizedTyped) => ({
         username: route.params.username,
         listType: 'liked',
@@ -30,7 +30,7 @@ const router = {
     },
     {
       path: 'rated',
-      name: 'Rated posts',
+      name: 'posts_rated',
       props: (route: RouteLocationNormalizedTyped) => ({
         username: route.params.username,
         listType: 'rated',

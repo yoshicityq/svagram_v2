@@ -43,21 +43,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import HatIcon from '@/assets/icons/HatIcon.vue'
-import JacketIcon from '@/assets/icons/JacketIcon.vue'
-import PantsIcon from '@/assets/icons/PantsIcon.vue'
-import ShoesIcon from '@/assets/icons/ShoesIcon.vue'
-import TshirtIcon from '@/assets/icons/TshirtIcon.vue'
+import HatIcon from '@/assets/icons/categories/HatIcon.vue'
+import JacketIcon from '@/assets/icons/categories/JacketIcon.vue'
+import PantsIcon from '@/assets/icons/categories/PantsIcon.vue'
+import ShoesIcon from '@/assets/icons/categories/ShoesIcon.vue'
+import TshirtIcon from '@/assets/icons/categories/TshirtIcon.vue'
 import FavBrandsIcon from '@/assets/icons/FavBrandsIcon.vue'
 
 import EstimatePost from '@/components/EstimatePost.vue'
 import UserProfile from '@/components/UserProfile.vue'
-import { CategoryBackend, CategoryReadable } from '@/components/enums/categories'
+import { CategoryBackend, CategoryReadable } from '@/enums/categories'
 
 import type { Post } from '@/types/post'
-import AccessoryIcon from '@/assets/icons/AccessoryIcon.vue'
-import BagIcon from '@/assets/icons/BagIcon.vue'
-import GlassesIcon from '@/assets/icons/GlassesIcon.vue'
+import AccessoryIcon from '@/assets/icons/categories/AccessoryIcon.vue'
+import BagIcon from '@/assets/icons/categories/BagIcon.vue'
+import GlassesIcon from '@/assets/icons/categories/GlassesIcon.vue'
 
 const props = defineProps<{
   post: Post
