@@ -18,6 +18,7 @@
               }}</span>
             </div>
             <MyButton
+              color="transparent"
               :icon="ChevronIcon"
               :is-sidebar-opened="false"
               @click="isPassOptionsVisible = !isPassOptionsVisible"
@@ -42,6 +43,7 @@
             </div>
 
             <MyButton
+              color="transparent"
               :icon="ChevronIcon"
               :is-sidebar-opened="false"
               @click="isEmailOptionsVisible = !isEmailOptionsVisible"
@@ -66,6 +68,7 @@
               }}</span>
             </div>
             <MyButton
+              color="transparent"
               :icon="ChevronIcon"
               :is-sidebar-opened="false"
               @click="isPrivacyOptionsVisible = !isPrivacyOptionsVisible"
@@ -126,7 +129,7 @@
           </Transition>
         </div>
 
-        <div class="setting-option">
+        <!-- <div class="setting-option">
           <div class="setting-option__header">
             <div class="setting-header__wrapper">
               <span class="setting-header__title">{{ $t('title.black_list_title') }}</span>
@@ -136,7 +139,7 @@
             </div>
             <MyButton :is-sidebar-opened="true">{{ $t('buttons.open') }}</MyButton>
           </div>
-        </div>
+        </div> -->
 
         <div class="setting-option setting-option--danger">
           <div class="setting-option__header">

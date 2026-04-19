@@ -49,6 +49,9 @@ function handleInput(e: Event) {
   font: inherit;
   background: transparent;
   border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .my-input::placeholder {

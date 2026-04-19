@@ -1,7 +1,8 @@
 <template>
   <div class="change-block">
     <span v-if="section === 'email'" class="current-email">
-      {{ $t('helpers.your_email') }}: {{ authStore.user?.email }}
+      {{ $t('helpers.your_email') }}:
+      <span class="current-email-name">{{ authStore.user?.email }}</span>
     </span>
 
     <!-- Step 1: Verify current password -->
@@ -608,6 +609,10 @@ async function submitNewEmail() {
   font-weight: 500;
   color: var(--text-muted);
   padding-left: 2px;
+  &-name {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
 }
 
 .step {
