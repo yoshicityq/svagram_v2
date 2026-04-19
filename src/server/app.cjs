@@ -10,6 +10,7 @@ const PostRating = require('./db.cjs').PostRating
 const Notification = require('./db.cjs').Notification
 const PostComment = require('./db.cjs').PostComment
 const Title = require('./db.cjs').Title
+const EmailVerification = require('./db.cjs').EmailVerification
 const mime = require('mime-types')
 const app = express()
 
@@ -359,6 +360,31 @@ app.get('/users/check-email/:email', (req, res, next) => {
     return res.json({
       isAvailable: !user,
     })
+  })
+})
+app.post('/users/check-password', authRequired, (req, res, next) => {
+  const currentPassword = String(req.body.currentPassword ?? '').trim()
+
+  if (!currentPassword) {
+    return res.status(400).json({ message: 'Current password is required' })
+  }
+
+  const userId = req.user.id
+  console.log(userId)
+  User.findById(userId, async (err, user) => {
+    if (err) return next(err)
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    try {
+      const isValid = await bcrypt.compare(currentPassword, user.password)
+
+      return res.json({ isValid })
+    } catch (error) {
+      return next(error)
+    }
   })
 })
 app.get('/posts/:id/comments', authRequired, (req, res, next) => {
@@ -1351,6 +1377,85 @@ app.post('/admin/titles/grant', authRequired, (req, res) => {
     res.json(result)
   })
 })
+app.post('/account/password-change/request', authRequired, async (req, res) => {
+  const userId = req.user.id // Получаем текущего пользователя
+  const email = req.user.email // Получаем email текущего пользователя
+
+  try {
+    const code = await EmailVerification.createVerificationCode(userId, 'change_password')
+    await EmailVerification.sendVerificationCode(email, code, 'change_password')
+    res.status(200).send({ message: 'Password reset email sent' })
+  } catch (err) {
+    console.error('[email error]', err)
+    res.status(500).send({ error: 'Failed to send email' })
+  }
+})
+
+app.post('/account/password-change/verify_code', authRequired, async (req, res) => {
+  const { code } = req.body
+  const userId = req.user.id
+
+  try {
+    await EmailVerification.verifyCode(userId, code, 'change_password')
+    res.status(200).send({ isValid: true, message: 'Code successfully verified' })
+  } catch (err) {
+    res.status(400).send({ error: err.message })
+  }
+})
+
+// Роут для подтверждения смены пароля
+
+app.post('/account/password-change/confirm', authRequired, async (req, res) => {
+  const { newPassword } = req.body
+  const userId = req.user.id
+
+  try {
+    await EmailVerification.changePassword(userId, newPassword)
+    await EmailVerification.markCodeAsUsed(userId, 'change_password')
+    res.status(200).send({ isChanged: true, message: 'Password changed successfully' })
+  } catch (err) {
+    res.status(400).send({ error: err.message })
+  }
+})
+
+// Роут для запроса смены почты
+app.post('/account/email-change/request', authRequired, async (req, res) => {
+  const userId = req.user.id
+  const email = req.user.email
+
+  try {
+    const code = await EmailVerification.createVerificationCode(userId, 'change_email')
+    await EmailVerification.sendVerificationCode(email, code, 'change_email')
+    res.status(200).send({ message: 'Email verification sent' })
+  } catch (err) {
+    res.status(500).send({ error: 'Failed to send verification email' })
+  }
+})
+app.post('/account/email-change/verify_code', authRequired, async (req, res) => {
+  const { code } = req.body
+  const userId = req.user.id
+
+  try {
+    await EmailVerification.verifyCode(userId, code, 'change_email')
+    res.status(200).send({ isValid: true, message: 'Code successfully verified' })
+  } catch (err) {
+    res.status(400).send({ error: err.message })
+  }
+})
+// Роут для подтверждения смены почты
+app.post('/account/email-change/confirm', authRequired, async (req, res) => {
+  const { newEmail } = req.body
+  const userId = req.user.id
+  try {
+    // const row = await EmailVerification.verifyCode(userId, code, 'change_email')
+    await EmailVerification.changeEmail(userId, newEmail)
+    await EmailVerification.markCodeAsUsed(userId, 'change_email')
+    res.status(200).send({ isChanged: true, message: 'Email changed successfully' })
+  } catch (err) {
+    res.status(400).send({ error: err.message })
+  }
+})
+
 app.delete('/me/avatar', authRequired, (req, res, next) => {
   User.clearAvatarById(req.user.id, (err, result) => {
     if (err) return next(err)

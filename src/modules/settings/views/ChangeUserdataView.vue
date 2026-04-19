@@ -9,7 +9,7 @@
 
     <div class="body">
       <div class="settings-card">
-        <div class="setting-option">
+        <div class="setting-option" :class="{ 'setting-option__open': isPassOptionsVisible }">
           <div class="setting-option__header">
             <div class="setting-header__wrapper">
               <span class="setting-header__title">{{ $t('title.change_pass_title') }}</span>
@@ -24,20 +24,15 @@
               :active="isPassOptionsVisible"
             />
           </div>
-          <div v-if="isPassOptionsVisible" class="rows-container">
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-title">Liked posts</span>
-                <span class="setting-description">Manage visibility of liked posts list</span>
-              </div>
-
-              <div class="setting-control setting-control--placeholder">
-                <span>Option</span>
+          <Transition name="expand">
+            <div v-show="isPassOptionsVisible" class="rows-container">
+              <div>
+                <UserdataChangeBlock section="password" />
               </div>
             </div>
-          </div>
+          </Transition>
         </div>
-        <div class="setting-option">
+        <div class="setting-option" :class="{ 'setting-option__open': isEmailOptionsVisible }">
           <div class="setting-option__header">
             <div class="setting-header__wrapper">
               <span class="setting-header__title">{{ $t('title.change_email_title') }}</span>
@@ -53,21 +48,16 @@
               :active="isEmailOptionsVisible"
             />
           </div>
-          <div v-if="isEmailOptionsVisible" class="rows-container">
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-title">Liked posts</span>
-                <span class="setting-description">Manage visibility of liked posts list</span>
-              </div>
-
-              <div class="setting-control setting-control--placeholder">
-                <span>Option</span>
+          <Transition name="expand">
+            <div v-show="isEmailOptionsVisible" class="rows-container">
+              <div>
+                <UserdataChangeBlock section="email" />
               </div>
             </div>
-          </div>
+          </Transition>
         </div>
 
-        <div class="setting-option">
+        <div class="setting-option" :class="{ 'setting-option__open': isPrivacyOptionsVisible }">
           <div class="setting-option__header">
             <div class="setting-header__wrapper">
               <span class="setting-header__title">{{ $t('title.privacy_title') }}</span>
@@ -82,54 +72,58 @@
               :active="isPrivacyOptionsVisible"
             />
           </div>
-          <div v-if="isPrivacyOptionsVisible" class="rows-container">
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-title">{{ $t('title.liked_posts_title') }}</span>
-                <span class="setting-description">{{
-                  $t('description.liked_posts_description')
-                }}</span>
+          <Transition name="expand">
+            <div v-show="isPrivacyOptionsVisible">
+              <div class="rows-container">
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <span class="setting-title">{{ $t('title.liked_posts_title') }}</span>
+                    <span class="setting-description">{{
+                      $t('description.liked_posts_description')
+                    }}</span>
+                  </div>
+
+                  <!-- <div class="setting-control setting-control--placeholder">
+                  </div> -->
+                  <MySwitcher
+                    :left-icon="LockedIcon"
+                    :right-icon="UnlockedIcon"
+                    v-model="likesVisibility"
+                  />
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <span class="setting-title">{{ $t('title.rated_posts_title') }}</span>
+                    <span class="setting-description">{{
+                      $t('description.rated_posts_description')
+                    }}</span>
+                  </div>
+
+                  <MySwitcher
+                    :left-icon="LockedIcon"
+                    :right-icon="UnlockedIcon"
+                    v-model="ratedVisibility"
+                  />
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <span class="setting-title">{{ $t('title.private_account_title') }}</span>
+                    <span class="setting-description">{{
+                      $t('description.private_account_description')
+                    }}</span>
+                  </div>
+
+                  <MySwitcher
+                    :left-icon="LockedIcon"
+                    :right-icon="UnlockedIcon"
+                    v-model="profileVisibility"
+                  />
+                </div>
               </div>
-
-              <!-- <div class="setting-control setting-control--placeholder">
-              </div> -->
-              <MySwitcher
-                :left-icon="LockedIcon"
-                :right-icon="UnlockedIcon"
-                v-model="likesVisibility"
-              />
             </div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-title">{{ $t('title.rated_posts_title') }}</span>
-                <span class="setting-description">{{
-                  $t('description.rated_posts_description')
-                }}</span>
-              </div>
-
-              <MySwitcher
-                :left-icon="LockedIcon"
-                :right-icon="UnlockedIcon"
-                v-model="ratedVisibility"
-              />
-            </div>
-
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-title">{{ $t('title.private_account_title') }}</span>
-                <span class="setting-description">{{
-                  $t('description.private_account_description')
-                }}</span>
-              </div>
-
-              <MySwitcher
-                :left-icon="LockedIcon"
-                :right-icon="UnlockedIcon"
-                v-model="profileVisibility"
-              />
-            </div>
-          </div>
+          </Transition>
         </div>
 
         <div class="setting-option">
@@ -165,11 +159,15 @@
 <script setup lang="ts">
 import { apiFetch } from '@/api/apiFetch'
 import ChevronIcon from '@/assets/icons/ChevronIcon.vue'
+import EyeOffIcon from '@/assets/icons/utils/EyeOffIcon.vue'
+import EyeOnIcon from '@/assets/icons/utils/EyeOnIcon.vue'
 import LockedIcon from '@/assets/icons/utils/LockedIcon.vue'
 import UnlockedIcon from '@/assets/icons/utils/UnlockedIcon.vue'
 import MyButton from '@/components/UI/MyButton.vue'
 import MySwitcher from '@/components/UI/MySwitcher.vue'
+import useAuthStore from '@/stores/auth'
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
+import UserdataChangeBlock from '../components/UserdataChangeBlock.vue'
 
 const isPrivacyOptionsVisible = ref(false)
 const isEmailOptionsVisible = ref(false)
@@ -178,20 +176,6 @@ const isPassOptionsVisible = ref(false)
 const likesVisibility = ref<Boolean | null>(null)
 const ratedVisibility = ref<Boolean | null>(null)
 const profileVisibility = ref<Boolean | null>(null)
-
-// watchEffect(async () => {
-//   const payload = {
-//     isPrivate: profileVisibility.value,
-//     likedPostsVisibility: likesVisibility.value === true ? 'private' : 'public',
-//     ratedPostsVisibility: ratedVisibility.value === true ? 'private' : 'public',
-//   }
-//   const response = await apiFetch(`/me/privacy`, {
-//     method: 'PATCH',
-//     body: JSON.stringify(payload),
-//   })
-
-//   console.log(response.ok)
-// })
 
 const payload = computed(() => {
   return {
@@ -283,7 +267,6 @@ onMounted(async () => {
 .setting-option {
   display: flex;
   flex-direction: column;
-  border-bottom: 1px solid var(--card-border);
   &__header {
     display: flex;
     justify-content: space-between;
@@ -291,6 +274,9 @@ onMounted(async () => {
     border-bottom: 1px solid var(--card-border);
     padding: 18px 20px;
   }
+}
+.setting-option__open {
+  border-bottom: 1px solid var(--card-border);
 }
 .setting-header__wrapper {
   display: flex;
@@ -307,11 +293,10 @@ onMounted(async () => {
   color: var(--text-soft);
 }
 .rows-container {
-  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 0 10px;
+  padding: 20px 10px;
 }
 .setting-row {
   display: flex;
@@ -389,4 +374,126 @@ onMounted(async () => {
     width: 100%;
   }
 }
+.field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--input-placeholder, #9ca3af);
+  pointer-events: none;
+  transition: color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.input-wrapper:focus-within .input-icon {
+  color: var(--primary);
+}
+
+.form-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px 0 42px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.form-input--password {
+  padding-right: 44px;
+}
+
+.form-input::placeholder {
+  color: var(--input-placeholder);
+}
+
+.form-input:hover {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--input-border-active);
+  box-shadow: var(--focus-ring);
+}
+
+/* Error state on input */
+.field--error .form-input {
+  border-color: var(--danger);
+}
+
+.field--error .form-input:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.field--error .input-icon {
+  color: var(--danger);
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  background: transparent;
+  color: var(--input-placeholder, #9ca3af);
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.toggle-password:hover {
+  color: var(--text-secondary);
+  background: var(--input-bg-hover, rgba(0, 0, 0, 0.04));
+}
+
+// .expand-enter-active,
+// .expand-leave-active {
+//   overflow: hidden;
+//   transition:
+//     grid-template-rows 0.3s ease,
+//     opacity 0.3s ease;
+//   display: grid;
+// }
+
+// .expand-enter-from,
+// .expand-leave-to {
+//   grid-template-rows: 0fr;
+//   opacity: 0;
+// }
+
+// .expand-enter-to,
+// .expand-leave-from {
+//   grid-template-rows: 1fr;
+//   opacity: 1;
+// }
+
+// .expand-enter-active > *,
+// .expand-leave-active > * {
+//   overflow: hidden;
+//   min-height: 0;
+// }
 </style>
