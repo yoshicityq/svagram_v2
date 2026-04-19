@@ -1,7 +1,24 @@
 // import sqlite3 from 'sqlite3';
+const crypto = require('crypto')
+const bcrypt = require('bcrypt')
 const sqlite3 = require('sqlite3').verbose()
-const dbName = 'later.sqlite'
+const dbName = 'swagram.db'
 const db = new sqlite3.Database(dbName)
+
+// Генерация кода
+function generateCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString() // 6 цифр
+}
+
+// Хэширование кода
+function hashCode(code) {
+  return crypto.createHash('sha256').update(code).digest('hex')
+}
+
+async function hashPassword(password) {
+  const saltRounds = 10
+  return await bcrypt.hash(password, saltRounds)
+}
 
 db.serialize(() => {
   db.run('PRAGMA foreign_keys = ON')
@@ -125,7 +142,19 @@ CREATE TABLE IF NOT EXISTS user_titles (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (title_id) REFERENCES titles(id) ON DELETE CASCADE
 );`
-
+  const sql_verification_codes = `
+  CREATE TABLE IF NOT EXISTS verification_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  type TEXT NOT NULL, 
+  code_hash TEXT NOT NULL,
+  new_email TEXT,
+  expires_at INTEGER NOT NULL,
+  attempts_count INTEGER DEFAULT 0,
+  used INTEGER DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);`
   db.run(sql_refresh)
   db.run(sql_users)
   db.run(sql_posts)
@@ -135,6 +164,7 @@ CREATE TABLE IF NOT EXISTS user_titles (
   db.run(sql_post_comments)
   db.run(sql_titles)
   db.run(sql_user_titles)
+  db.run(sql_verification_codes)
   db.run(`
   CREATE INDEX IF NOT EXISTS idx_post_comments_post_created
   ON post_comments(post_id, created_at DESC)
@@ -930,6 +960,139 @@ class Title {
     )
   }
 }
+class EmailVerification {
+  // Сохранить код в базу
+  static async createVerificationCode(userId, type, newEmail = null) {
+    const code = generateCode()
+    const codeHash = hashCode(code)
+    const expiresAt = Date.now() + 10 * 60 * 1000 // 10 минут
+    return new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO verification_codes (user_id, type, code_hash, new_email, expires_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [userId, type, codeHash, newEmail, expiresAt, Date.now()],
+        function (err) {
+          if (err) {
+            return reject(err)
+          }
+          resolve(code) // Вернем сам код, чтобы отправить его пользователю
+        },
+      )
+    })
+  }
+
+  // Отправить код на email
+  static async sendVerificationCode(email, code, type) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEV] Code for ${email}: ${code}`)
+      return
+    }
+    const nodemailer = require('nodemailer')
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+    const subject = type === 'change_password' ? 'Смена пароля' : 'Смена почты'
+    const text = `Ваш код подтверждения: ${code}. Он действителен 10 минут.`
+
+    return new Promise((resolve, reject) => {
+      transporter.sendMail(
+        {
+          from: process.env.SMTP_FROM,
+          to: email,
+          subject,
+          text,
+        },
+        (error, info) => {
+          if (error) {
+            return reject(error)
+          }
+          resolve(info)
+        },
+      )
+    })
+  }
+
+  // Проверка кода
+  static async verifyCode(userId, code, type) {
+    const codeHash = hashCode(code)
+
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT * FROM verification_codes WHERE user_id = ? AND type = ? AND code_hash = ? AND used = 0`,
+        [userId, type, codeHash],
+        (err, row) => {
+          if (err) {
+            return reject(err)
+          }
+
+          if (!row) {
+            return reject(new Error('Invalid or expired code'))
+          }
+
+          // Проверка срока действия
+          if (row.expires_at < Date.now()) {
+            return reject(new Error('Code has expired'))
+          }
+
+          // Увеличиваем счётчик попыток
+          db.run(`UPDATE verification_codes SET attempts_count = attempts_count + 1 WHERE id = ?`, [
+            row.id,
+          ])
+
+          resolve(row)
+        },
+      )
+    })
+  }
+
+  // Смена пароля
+  static async changePassword(userId, newPassword) {
+    const hashedPassword = await hashPassword(newPassword)
+
+    return new Promise((resolve, reject) => {
+      db.run(`UPDATE users SET password = ? WHERE id = ?`, [hashedPassword, userId], (err) => {
+        if (err) {
+          return reject(err)
+        }
+        resolve()
+      })
+    })
+  }
+
+  // Смена почты
+  static async changeEmail(userId, newEmail) {
+    return new Promise((resolve, reject) => {
+      db.run(`UPDATE users SET email = ? WHERE id = ?`, [newEmail, userId], (err) => {
+        if (err) {
+          return reject(err)
+        }
+        resolve()
+      })
+    })
+  }
+
+  // Помечаем код как использованный
+  static async markCodeAsUsed(userId, type) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE verification_codes SET used = 1 WHERE user_id = ? AND type = ?`,
+        [userId, type],
+        (err) => {
+          if (err) {
+            return reject(err)
+          }
+          resolve()
+        },
+      )
+    })
+  }
+}
 
 module.exports = db
 module.exports.User = User
@@ -939,5 +1102,5 @@ module.exports.PostRating = PostRating
 module.exports.Notification = Notification
 module.exports.PostComment = PostComment
 module.exports.Title = Title
-
+module.exports.EmailVerification = EmailVerification
 module.exports.RefreshSession = RefreshSession

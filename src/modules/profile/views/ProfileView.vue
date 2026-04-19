@@ -172,12 +172,12 @@ async function click() {
   await apiFetch('/api/admin/titles', {
     method: 'POST',
     body: JSON.stringify({
-      title_name: 'Fame ',
+      title_name: 'Zvezdochka',
       description: 'qqq',
     }),
   })
 }
-
+// Zvezdochka Swag Fame
 watch(
   () => route.query.post,
   (newPost) => {
