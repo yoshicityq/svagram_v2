@@ -43,7 +43,7 @@ const props = defineProps({
     required: true,
   },
   id: {
-    type: Number,
+    type: String,
     required: true,
   },
 })
@@ -78,6 +78,21 @@ function chooseCategory(category: Category) {
   emits('update:modelValue', category.categoryVal)
   isOpen.value = false
 }
+function handleClickOutside(event: MouseEvent) {
+  const target = event.target as Node
+
+  if (categorySelectRef.value && !categorySelectRef.value.contains(target)) {
+    isOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped lang="scss">

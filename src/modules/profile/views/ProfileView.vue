@@ -30,7 +30,7 @@
               <div class="user-meta-row">
                 <div class="meta-item">
                   <PostsIcon class="meta-item-icon" />
-                  <span>{{ postsQuantity }} {{ $t('profilePage.posts_count') }}</span>
+                  <span>{{ profileStore.userPostsCount }} {{ $t('profilePage.posts_count') }}</span>
                 </div>
                 <div v-if="userProfileData?.favorite_brands" class="meta-item">
                   <FavBrandsIcon class="meta-item-icon" />
@@ -172,7 +172,7 @@ async function click() {
   await apiFetch('/api/admin/titles', {
     method: 'POST',
     body: JSON.stringify({
-      title_name: 'Zvezdochka',
+      title_name: 'Fame',
       description: 'qqq',
     }),
   })

@@ -48,17 +48,21 @@ db.serialize(() => {
       img_mimetype CHAR(16) NOT NULL,
       likes integer,
       people_liked TEXT,
-      brand_accessory TEXT,
-      brand_hat TEXT NOT NULL,
-      brand_outwear TEXT NOT NULL,
-      brand_top TEXT NOT NULL, 
-      brand_bottom TEXT NOT NULL,
-      brand_shoes TEXT NOT NULL,
-      brand_bag TEXT NOT NULL,
-      brand_glasses TEXT NOT NULL,
+      latitude TEXT,
+      longitude TEXT,
+      date TEXT NOT NULL,
+      category_list TEXT,
 
       FOREIGN KEY (user) REFERENCES users(username))
   `
+  // brand_accessory TEXT,
+  //     brand_hat TEXT NOT NULL,
+  //     brand_outwear TEXT NOT NULL,
+  //     brand_top TEXT NOT NULL,
+  //     brand_bottom TEXT NOT NULL,
+  //     brand_shoes TEXT NOT NULL,
+  //     brand_bag TEXT NOT NULL,
+  //     brand_glasses TEXT NOT NULL,
   const sql_refresh = `
   CREATE TABLE IF NOT EXISTS refresh_sessions (
     jti TEXT PRIMARY KEY,
@@ -346,29 +350,40 @@ class Post {
   }
 
   static find(id, cb) {
-    db.get('SELECT * FROM posts WHERE id = ?', id, cb)
+    db.get('SELECT * FROM posts WHERE id = ?', [id], cb)
   }
 
   static create(data, cb) {
-    const sql =
-      'INSERT INTO posts(user, description, img, img_mimetype, likes, people_liked, brand_accessory, brand_hat, brand_outwear, brand_top, brand_bottom, brand_shoes, brand_bag, brand_glasses) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?)'
+    const sql = `
+      INSERT INTO posts(
+        user,
+        description,
+        img,
+        img_mimetype,
+        likes,
+        people_liked,
+        latitude,
+        longitude,
+        category_list,
+        date
+      )
+      VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
 
     db.run(
       sql,
-      data.user,
-      data.description,
-      data.img,
-      data.img_mimetype,
-      data.likes,
-      data.people_liked,
-      data.brand_accessory,
-      data.brand_hat,
-      data.brand_outwear,
-      data.brand_top,
-      data.brand_bottom,
-      data.brand_shoes,
-      data.brand_bag,
-      data.brand_glasses,
+      [
+        data.user,
+        data.description,
+        data.img,
+        data.img_mimetype,
+        data.likes,
+        data.people_liked,
+        data.latitude,
+        data.longitude,
+        data.category_list,
+        data.date,
+      ],
       function (err) {
         if (err) return cb(err)
         cb(null, { id: this.lastID })
@@ -378,194 +393,198 @@ class Post {
 
   static list({ userId, limit = 20, offset = 0 } = {}, cb) {
     const sql = `
-    SELECT
-      p.id, p.user, p.description, 
-      p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
-      p.img_mimetype,
-      COALESCE(lc.likes, 0) AS likes,
-      COALESCE(cc.commentsCount, 0) AS commentsCount,
-      CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
-    FROM posts p
-    LEFT JOIN (
-      SELECT post_id, COUNT(*) AS likes
-      FROM post_likes
-      GROUP BY post_id
-    ) lc ON lc.post_id = p.id
-    LEFT JOIN (
-      SELECT post_id, COUNT(*) AS commentsCount
-      FROM post_comments
-      GROUP BY post_id
-    ) cc ON cc.post_id = p.id
-    LEFT JOIN post_likes pl
-      ON pl.post_id = p.id AND pl.user_id = ?
-    ORDER BY p.id DESC
-    LIMIT ? OFFSET ?
-  `
-    db.all(sql, userId, limit, offset, cb)
+      SELECT
+        p.id,
+        p.user,
+        p.description,
+        p.category_list,
+        p.img_mimetype,
+        p.latitude,
+        p.longitude,
+        p.date,
+        COALESCE(lc.likes, 0) AS likes,
+        COALESCE(cc.commentsCount, 0) AS commentsCount,
+        CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
+      FROM posts p
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) AS likes
+        FROM post_likes
+        GROUP BY post_id
+      ) lc ON lc.post_id = p.id
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) AS commentsCount
+        FROM post_comments
+        GROUP BY post_id
+      ) cc ON cc.post_id = p.id
+      LEFT JOIN post_likes pl
+        ON pl.post_id = p.id AND pl.user_id = ?
+      ORDER BY p.id DESC
+      LIMIT ? OFFSET ?
+    `
+
+    db.all(sql, [userId, limit, offset], cb)
   }
 
   static listByUsername(username, { userId, limit = 20, offset = 0 } = {}, cb) {
     const sql = `
-    SELECT
-      p.id, p.user, p.description,
-      p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
-      p.img_mimetype,
-      COALESCE(lc.likes, 0) AS likes,
-      COALESCE(cc.commentsCount, 0) AS commentsCount,
-      CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
-    FROM posts p
-    LEFT JOIN (
-      SELECT post_id, COUNT(*) AS likes
-      FROM post_likes
-      GROUP BY post_id
-    ) lc ON lc.post_id = p.id
-    LEFT JOIN (
-      SELECT post_id, COUNT(*) AS commentsCount
-      FROM post_comments
-      GROUP BY post_id
-    ) cc ON cc.post_id = p.id
-    LEFT JOIN post_likes pl
-      ON pl.post_id = p.id AND pl.user_id = ?
-    WHERE p.user = ?
-    ORDER BY p.id DESC
-    LIMIT ? OFFSET ?
-  `
-    db.all(sql, userId, username, limit, offset, cb)
+      SELECT
+        p.id,
+        p.user,
+        p.description,
+        p.category_list,
+        p.img_mimetype,
+        p.latitude,
+        p.longitude,
+        p.date,
+        COALESCE(lc.likes, 0) AS likes,
+        COALESCE(cc.commentsCount, 0) AS commentsCount,
+        CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
+      FROM posts p
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) AS likes
+        FROM post_likes
+        GROUP BY post_id
+      ) lc ON lc.post_id = p.id
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) AS commentsCount
+        FROM post_comments
+        GROUP BY post_id
+      ) cc ON cc.post_id = p.id
+      LEFT JOIN post_likes pl
+        ON pl.post_id = p.id AND pl.user_id = ?
+      WHERE p.user = ?
+      ORDER BY p.id DESC
+      LIMIT ? OFFSET ?
+    `
+
+    db.all(sql, [userId, username, limit, offset], cb)
   }
+
   static listLikedByUsername(username, { viewerUserId = null, limit = 20, offset = 0 } = {}, cb) {
     const sql = `
-    SELECT
-      p.id,
-      p.user,
-      p.description,
-      p.brand_accessory,
-      p.brand_hat,
-      p.brand_outwear,
-      p.brand_top,
-      p.brand_bottom,
-      p.brand_shoes,
-      p.brand_bag,
-      p.brand_glasses,
-      p.img_mimetype,
-      COALESCE(lc.likes, 0) AS likes,
-      CASE WHEN vpl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
-    FROM post_likes target_like
-    JOIN users u
-      ON u.id = target_like.user_id
-    JOIN posts p
-      ON p.id = target_like.post_id
-    LEFT JOIN (
-      SELECT post_id, COUNT(*) AS likes
-      FROM post_likes
-      GROUP BY post_id
-    ) lc
-      ON lc.post_id = p.id
-    LEFT JOIN post_likes vpl
-      ON vpl.post_id = p.id AND vpl.user_id = ?
-    WHERE u.username = ?
-    ORDER BY target_like.created_at DESC, p.id DESC
-    LIMIT ? OFFSET ?
-  `
+      SELECT
+        p.id,
+        p.user,
+        p.description,
+        p.category_list,
+        p.img_mimetype,
+        p.latitude,
+        p.longitude,
+        p.date,
+        COALESCE(lc.likes, 0) AS likes,
+        CASE WHEN vpl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
+      FROM post_likes target_like
+      JOIN users u
+        ON u.id = target_like.user_id
+      JOIN posts p
+        ON p.id = target_like.post_id
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) AS likes
+        FROM post_likes
+        GROUP BY post_id
+      ) lc
+        ON lc.post_id = p.id
+      LEFT JOIN post_likes vpl
+        ON vpl.post_id = p.id AND vpl.user_id = ?
+      WHERE u.username = ?
+      ORDER BY target_like.created_at DESC, p.id DESC
+      LIMIT ? OFFSET ?
+    `
 
-    db.all(sql, viewerUserId, username, limit, offset, cb)
+    db.all(sql, [viewerUserId, username, limit, offset], cb)
   }
+
   static listRatedByUsername(username, { viewerUserId = null, limit = 20, offset = 0 } = {}, cb) {
     const sql = `
-    SELECT
-      p.id,
-      p.user,
-      p.description,
-      p.brand_accessory,
-      p.brand_hat,
-      p.brand_outwear,
-      p.brand_top,
-      p.brand_bottom,
-      p.brand_shoes,
-      p.brand_bag,
-      p.brand_glasses,
-      p.img_mimetype,
-      COALESCE(lc.likes, 0) AS likes,
-      CASE WHEN vpl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe,
-      target_rating.rating AS userRating,
-      COALESCE(rm.avgRating, 0) AS avgRating,
-      COALESCE(rm.ratingsCount, 0) AS ratingsCount
-    FROM post_ratings target_rating
-    JOIN users u
-      ON u.id = target_rating.user_id
-    JOIN posts p
-      ON p.id = target_rating.post_id
-    LEFT JOIN (
-      SELECT post_id, COUNT(*) AS likes
-      FROM post_likes
-      GROUP BY post_id
-    ) lc
-      ON lc.post_id = p.id
-    LEFT JOIN post_likes vpl
-      ON vpl.post_id = p.id AND vpl.user_id = ?
-    LEFT JOIN (
       SELECT
-        post_id,
-        ROUND(AVG(rating), 2) AS avgRating,
-        COUNT(*) AS ratingsCount
-      FROM post_ratings
-      GROUP BY post_id
-    ) rm
-      ON rm.post_id = p.id
-    WHERE u.username = ?
-    ORDER BY target_rating.updated_at DESC, p.id DESC
-    LIMIT ? OFFSET ?
-  `
+        p.id,
+        p.user,
+        p.description,
+        p.category_list,
+        p.img_mimetype,
+        p.latitude,
+        p.longitude,
+        p.date,
+        COALESCE(lc.likes, 0) AS likes,
+        CASE WHEN vpl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe,
+        target_rating.rating AS userRating,
+        COALESCE(rm.avgRating, 0) AS avgRating,
+        COALESCE(rm.ratingsCount, 0) AS ratingsCount
+      FROM post_ratings target_rating
+      JOIN users u
+        ON u.id = target_rating.user_id
+      JOIN posts p
+        ON p.id = target_rating.post_id
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) AS likes
+        FROM post_likes
+        GROUP BY post_id
+      ) lc
+        ON lc.post_id = p.id
+      LEFT JOIN post_likes vpl
+        ON vpl.post_id = p.id AND vpl.user_id = ?
+      LEFT JOIN (
+        SELECT
+          post_id,
+          ROUND(AVG(rating), 2) AS avgRating,
+          COUNT(*) AS ratingsCount
+        FROM post_ratings
+        GROUP BY post_id
+      ) rm
+        ON rm.post_id = p.id
+      WHERE u.username = ?
+      ORDER BY target_rating.updated_at DESC, p.id DESC
+      LIMIT ? OFFSET ?
+    `
 
-    db.all(sql, viewerUserId, username, limit, offset, cb)
+    db.all(sql, [viewerUserId, username, limit, offset], cb)
   }
+
   static findMetaById(id, userId, cb) {
     const sql = `
-    SELECT
-      p.id, p.user, p.description,
-      p.brand_accessory, p.brand_hat, p.brand_outwear, p.brand_top, p.brand_bottom, p.brand_shoes, p.brand_bag, p.brand_glasses,
-      p.img_mimetype,
-      COALESCE(lc.likes, 0) AS likes,
-      COALESCE(cc.commentsCount, 0) AS commentsCount,
-      CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
-    FROM posts p
-    LEFT JOIN (
-      SELECT post_id, COUNT(*) AS likes
-      FROM post_likes
-      GROUP BY post_id
-    ) lc ON lc.post_id = p.id
-    LEFT JOIN (
-      SELECT post_id, COUNT(*) AS commentsCount
-      FROM post_comments
-      GROUP BY post_id
-    ) cc ON cc.post_id = p.id
-    LEFT JOIN post_likes pl
-      ON pl.post_id = p.id AND pl.user_id = ?
-    WHERE p.id = ?
-  `
-    db.get(sql, userId, id, cb)
+      SELECT
+        p.id,
+        p.user,
+        p.description,
+        p.category_list,
+        p.img_mimetype,
+        p.latitude,
+        p.longitude,
+        p.date,
+        COALESCE(lc.likes, 0) AS likes,
+        COALESCE(cc.commentsCount, 0) AS commentsCount,
+        CASE WHEN pl.user_id IS NULL THEN 0 ELSE 1 END AS likedByMe
+      FROM posts p
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) AS likes
+        FROM post_likes
+        GROUP BY post_id
+      ) lc ON lc.post_id = p.id
+      LEFT JOIN (
+        SELECT post_id, COUNT(*) AS commentsCount
+        FROM post_comments
+        GROUP BY post_id
+      ) cc ON cc.post_id = p.id
+      LEFT JOIN post_likes pl
+        ON pl.post_id = p.id AND pl.user_id = ?
+      WHERE p.id = ?
+    `
+
+    db.get(sql, [userId, id], cb)
   }
-
-  // static update(data, cb) {
-  //   const sql = 'UPDATE posts SET likes = ?, people_liked = ? WHERE id = ?'
-  //   db.run(sql, data.likes, data.people_liked, data.id, cb)
-  // }
-
-  // static delete(id, cb) {
-  //   if (!id) return cb(new Error('Please provide an id'))
-  //   db.run('DELETE FROM posts WHERE id = ?', id, cb)
-  // }
 
   static findOwnerByPostId(postId, cb) {
     const sql = `
-    SELECT
-      u.id,
-      u.username
-    FROM posts p
-    JOIN users u
-      ON u.username = p.user
-    WHERE p.id = ?
-  `
-    db.get(sql, postId, cb)
+      SELECT
+        u.id,
+        u.username
+      FROM posts p
+      JOIN users u
+        ON u.username = p.user
+      WHERE p.id = ?
+    `
+
+    db.get(sql, [postId], cb)
   }
 }
 class PostComment {

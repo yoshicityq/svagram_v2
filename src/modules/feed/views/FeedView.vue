@@ -4,9 +4,11 @@
       <PostList />
     </div>
   </div>
+  <OpenPostDialog />
 </template>
 
 <script setup lang="ts">
+import OpenPostDialog from '@/components/OpenPostDialog.vue'
 import PostList from '../components/PostList.vue'
 </script>
 

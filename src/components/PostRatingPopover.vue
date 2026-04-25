@@ -1,5 +1,5 @@
 <template>
-  <div class="rating-popover" @click.stop ref="popoverRef">
+  <div class="rating-popover" :class="`rating-popover__${direction}`" @click.stop ref="popoverRef">
     <div class="rating-head">
       <div class="rating-head__top">
         <span class="rating-title">Rate this post</span>
@@ -38,7 +38,7 @@ import { apiFetch } from '@/api/apiFetch'
 import useModalStore from '@/stores/modals'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-const props = defineProps<{ postId: number }>()
+const props = defineProps<{ postId: number; direction: string }>()
 const emits = defineEmits(['selected'])
 
 const loading = ref(false)
@@ -137,8 +137,15 @@ watch(
   border-radius: var(--radius-md);
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
+  position: absolute;
+  z-index: 2000;
 }
-
+.rating-popover__bottom {
+  top: 100%;
+}
+.rating-popover__top {
+  top: -310%;
+}
 .rating-head {
   display: flex;
   flex-direction: column;

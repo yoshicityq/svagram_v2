@@ -1,7 +1,7 @@
 import { closeWs, handleActivity } from '@/services/ws'
 
 let inactivityTimeout: number | null = null
-const INACTIVITY_LIMIT = 5 * 60 * 1000 // 5 min
+const INACTIVITY_LIMIT = 0.5 * 60 * 1000 // 5 min
 
 function resetInactivityTimer() {
   if (inactivityTimeout) {

@@ -34,7 +34,7 @@
 import EstimatePost from '@/components/EstimatePost.vue'
 import useModalStore from '@/stores/modals'
 import type { Post } from '@/types/post'
-import { ref } from 'vue'
+import { ref, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -132,5 +132,55 @@ function openPost() {
 .overlay-fade-enter-from,
 .overlay-fade-leave-to {
   opacity: 0;
+}
+
+/* ── Pins ── */
+.image-editor__pin {
+  position: absolute;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  cursor: default;
+}
+
+.pin-dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.image-editor__pin:hover .pin-dot {
+  transform: scale(1.3);
+}
+
+.pin-label {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--bg-overlay);
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  align-items: center;
+}
+
+.pin-label__category {
+  color: rgba(255, 255, 255, 0.65);
+}
+.pin-label__icon {
+  width: 17px;
+}
+.pin-label__brand {
+  color: #fff;
+  font-weight: 600;
 }
 </style>
