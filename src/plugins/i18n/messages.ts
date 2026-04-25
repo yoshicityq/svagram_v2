@@ -234,10 +234,17 @@ export const messages = {
       change_password: 'Изменить пароль',
       saving: 'Сохранение...',
       change_email: 'Изменить почту',
+      next: 'Дальше',
     },
     modals: {
       create_new_post: 'Создание нового поста',
       upload_photo: 'Нажмите чтобы загрузить фото',
+      make_capture: 'Подпись к вашей фотке',
+      choose_location: 'Укажите место где сфотались',
+      photo_and_location: 'Выберите фотографию и место, где она была сделана',
+      tag_brands: 'Укажите категории одежды и соответствующие им бренды',
+      click_to_add_pin: 'Нажмите, чтобы добавить пин',
+      tagged_categories: 'Добавленные категории',
     },
     placeholder: {
       photo_capture: 'Придумайте подпись...',
@@ -253,6 +260,7 @@ export const messages = {
       new_password: 'Введите новый пароль',
       enter_password: 'Введите пароль от аккаунта',
       new_email: 'Введите новую почту',
+      search_place: 'Искать место...',
     },
     password_strength: {
       weak: 'Слабый пароль',

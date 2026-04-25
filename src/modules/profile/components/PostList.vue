@@ -41,7 +41,7 @@
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!posts?.length" class="empty-state">
+    <div v-else-if="!profileStore.userPosts" class="empty-state">
       <svg
         class="empty-state-icon"
         width="44"
@@ -73,7 +73,7 @@
     <!-- Posts grid -->
     <TransitionGroup v-else name="post-fade" tag="div" class="post-list">
       <PostCard
-        v-for="(post, index) in posts"
+        v-for="(post, index) in profileStore.userPosts"
         :key="post.id"
         :post="post"
         :style="{ animationDelay: `${index * 40}ms` }"
@@ -89,6 +89,7 @@ import PostCard from './PostCard.vue'
 import type { Post } from '@/types/post'
 import { getUserLikedPosts, getUserPosts, getUserRatedPosts } from '@/api/apiData'
 import MyLoader from '@/components/MyLoader.vue'
+import { useProfileStore } from '@/stores/profile'
 
 const props = defineProps({
   username: String,
@@ -98,14 +99,10 @@ const props = defineProps({
   },
 })
 
-const emits = defineEmits<{
-  postsQuantity: [count: number]
-}>()
-
 const loading = ref(false)
 const hasError = ref(false)
 const posts = ref<Post[]>([])
-
+const profileStore = useProfileStore()
 async function fetchPosts() {
   if (!props.username) return
 
@@ -115,17 +112,18 @@ async function fetchPosts() {
   try {
     if (props.listType === 'rated') {
       const data = await getUserRatedPosts(props.username)
-      posts.value = data ?? []
+      profileStore.userPosts = data ?? []
     }
     if (props.listType === 'liked') {
       const data = await getUserLikedPosts(props.username)
-      posts.value = data ?? []
+      profileStore.userPosts = data ?? []
     }
     if (props.listType === '') {
       const data = await getUserPosts(props.username)
-      posts.value = data ?? []
+      // posts.value = data ?? []
+      profileStore.userPosts = data ?? []
+      profileStore.userPostsCount = profileStore.userPosts.length
     }
-    emits('postsQuantity', posts.value.length)
   } catch (e) {
     console.error(e)
     hasError.value = true

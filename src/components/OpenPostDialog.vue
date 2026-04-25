@@ -2,7 +2,7 @@
   <Teleport to="#portal">
     <div v-show="modalStore.isPostDialogOpen" class="post-overlay" @click.self="closeDialog">
       <div class="post-modal">
-        <div class="post-modal__image-side">
+        <div class="post-modal__image-side" ref="imageContainer">
           <div v-if="loading" class="post-modal__loader">
             <MyLoader />
           </div>
@@ -13,6 +13,33 @@
             alt="Post image"
             class="post-modal__image"
           />
+          <span
+            v-if="post && isBrandsVisible"
+            v-for="pin in post.category_list"
+            :key="pin.id"
+            class="image-editor__pin"
+            :style="{ left: `${pin.xPercent}%`, top: `${pin.yPercent}%` }"
+          >
+            <span class="pin-dot" />
+            <span v-if="pin.category || pin.brand" class="pin-label">
+              <!-- <span v-if="pin.category" class="pin-label__category">{{
+                  $t(CategoryReadable(CategoryBackend(pin.category)!)!)
+                }}</span> -->
+              <component
+                v-if="pin.category"
+                :is="iconsContainer[pin.category]"
+                class="pin-label__icon"
+              />
+              <span v-if="pin.brand" class="pin-label__brand">{{ pin.brand }}</span>
+            </span>
+          </span>
+          <MyButton
+            :icon="isBrandsVisible ? EyeOnIcon : EyeOffIcon"
+            :is-sidebar-opened="false"
+            size="s"
+            class="post-modal__close-btn"
+            @click="isBrandsVisible = !isBrandsVisible"
+          />
         </div>
 
         <div class="post-modal__content-side">
@@ -20,7 +47,6 @@
             <div class="post-header__user">
               <UserProfile :username="username" />
             </div>
-
             <button
               type="button"
               class="post-header__close"
@@ -32,9 +58,33 @@
           </div>
 
           <div class="post-stats">
-            <EstimatePost v-if="postId" :post-id="postId" />
-          </div>
+            <div class="post-stats__meta">
+              <span v-if="post?.date" class="post-meta__item">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>{{ formatTime(post.date) }}</span>
+              </span>
+              <span v-if="post?.latitude && post?.longitude" class="post-meta__item">
+                <LocationIcon class="post-meta__icon" />
+                <span>{{ post.latitude.toFixed(3) }}, {{ post.longitude.toFixed(3) }}</span>
+              </span>
+            </div>
 
+            <p v-if="post?.description" class="post-stats__description">
+              {{ post.description }}
+            </p>
+          </div>
           <div class="post-comments">
             <div v-if="!commentsArr.length" class="post-comments__empty">
               <CommentsIcon class="post-comments__icon" color="blueviolet" />
@@ -73,7 +123,7 @@
           </div>
 
           <div class="post-footer">
-            <div v-if="hasBrands" class="post-brands">
+            <!-- <div v-if="hasBrands" class="post-brands">
               <button type="button" class="post-brands__toggle" @click="toggleBrands">
                 <span class="post-brands__toggle-text">{{ $t('helpers.brands') }}</span>
                 <ChevronIcon class="post-brands__chevron" :class="{ open: isBrandsVisible }" />
@@ -102,10 +152,12 @@
                   </div>
                 </div>
               </transition>
-            </div>
+            </div> -->
+            <EstimatePost v-if="postId" :post-id="postId" />
 
             <div class="post-input">
-              <CommentsInput :post-id="postId" />
+              <!-- <CommentsInput :post-id="postId" /> -->
+              <MyInput />
             </div>
           </div>
         </div>
@@ -127,9 +179,23 @@ import MyAvatar from '@/components/MyAvatar.vue'
 import MyLoader from '@/components/MyLoader.vue'
 import UserProfile from '@/components/UserProfile.vue'
 import useModalStore from '@/stores/modals'
-import type { Post } from '@/types/post'
-import { computed, ref, watch } from 'vue'
+import AccessoryIcon from '@/assets/icons/categories/AccessoryIcon.vue'
+import BagIcon from '@/assets/icons/categories/BagIcon.vue'
+import GlassesIcon from '@/assets/icons/categories/GlassesIcon.vue'
+import HatIcon from '@/assets/icons/categories/HatIcon.vue'
+import JacketIcon from '@/assets/icons/categories/JacketIcon.vue'
+import PantsIcon from '@/assets/icons/categories/PantsIcon.vue'
+import ShoesIcon from '@/assets/icons/categories/ShoesIcon.vue'
+import TshirtIcon from '@/assets/icons/categories/TshirtIcon.vue'
+import type { Post, PostPin } from '@/types/post'
+import { computed, onMounted, onUpdated, ref, watch, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import MyInput from './UI/MyInput.vue'
+import { useI18n } from 'vue-i18n'
+import LocationIcon from '@/assets/icons/LocationIcon.vue'
+import MyButton from './UI/MyButton.vue'
+import EyeOnIcon from '@/assets/icons/utils/EyeOnIcon.vue'
+import EyeOffIcon from '@/assets/icons/utils/EyeOffIcon.vue'
 
 const modalStore = useModalStore()
 const route = useRoute()
@@ -138,12 +204,11 @@ const router = useRouter()
 const post = ref<Post | null>(null)
 const username = ref('')
 const loading = ref(false)
-const isBrandsVisible = ref(false)
+const isBrandsVisible = ref(true)
 
 const postId = computed(() => modalStore.openedPostId as number)
 const onlyBrandsArray = ref<Array<[string, string[]]>>([])
 const hasBrands = computed(() => onlyBrandsArray.value.length > 0)
-
 async function getPost(id: number) {
   loading.value = true
 
@@ -158,7 +223,6 @@ async function getPost(id: number) {
       username.value = data.post.user
       post.value = formatBrandData(data.post)
       onlyBrandsArray.value = onlyBrandEntries(data.post)
-
       modalStore.openedPostRating = ratingData
       modalStore.openedPostLikes = likesData
     }
@@ -167,6 +231,39 @@ async function getPost(id: number) {
   } finally {
     loading.value = false
   }
+}
+const now = ref(Date.now())
+const { t } = useI18n()
+function getPluralKey(value: number, unit: 'minute' | 'hour' | 'day' | 'week'): string {
+  const mod10 = value % 10
+  const mod100 = value % 100
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return `time.${unit}_ago_1`
+  }
+
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `time.${unit}_ago_2_4`
+  }
+
+  return `time.${unit}_ago_5`
+}
+
+function formatTime(ts: number): string {
+  const diff = now.value - ts
+  const m = Math.floor(diff / 60000)
+
+  if (m < 1) return t('time.just_now')
+  if (m < 60) return m === 1 ? t('time.minute_ago_1') : `${m} ${t(getPluralKey(m, 'minute'))}`
+
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h} ${t(getPluralKey(h, 'hour'))}`
+
+  const d = Math.floor(h / 24)
+  if (d < 7) return `${d} ${t(getPluralKey(d, 'day'))}`
+
+  const w = Math.floor(d / 7)
+  return `${w} ${t(getPluralKey(w, 'week'))}`
 }
 type Comment = {
   avatarUrl: null | string
@@ -183,23 +280,20 @@ type Comment = {
 }
 const commentsArr = ref<Array<Comment>>([])
 
+const iconsContainer: Record<string, Component> = {
+  brand_hat: HatIcon,
+  brand_top: TshirtIcon,
+  brand_accessory: AccessoryIcon,
+  brand_glasses: GlassesIcon,
+  brand_bottom: PantsIcon,
+  brand_shoes: ShoesIcon,
+  brand_bag: BagIcon,
+  brand_outwear: JacketIcon,
+}
 async function getPostComments(id: number) {
   const response = await apiFetch(`/posts/${id}/comments`)
   const data = await response.json()
   commentsArr.value = data.comments
-}
-
-function formatTime(ts: number) {
-  const diff = Date.now() - ts
-  const m = Math.floor(diff / 60000)
-  if (m < 1) return 'just now'
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h`
-  const d = Math.floor(h / 24)
-  if (d < 7) return `${d}d`
-  const w = Math.floor(d / 7)
-  return `${w}w`
 }
 
 function parseBrands(value: string): string[] {
@@ -256,6 +350,7 @@ watch(
     if (newVal) {
       await getPost(newVal)
       await getPostComments(newVal)
+      isBrandsVisible.value = true
     } else {
       post.value = null
       onlyBrandsArray.value = []
@@ -296,6 +391,7 @@ watch(
   justify-content: center;
   min-width: 0;
   min-height: 0;
+  position: relative;
 }
 
 .post-modal__loader {
@@ -323,9 +419,13 @@ watch(
   background: var(--card-bg);
   overflow: visible;
 }
-
+.post-modal__close-btn {
+  position: absolute;
+  bottom: 3%;
+  right: 3%;
+}
 .post-header {
-  height: 72px;
+  height: 64px;
   padding: 0 16px;
   border-bottom: 1px solid var(--border-muted);
   display: flex;
@@ -334,12 +434,15 @@ watch(
   gap: 12px;
   flex-shrink: 0;
 }
-
 .post-header__user {
   min-width: 0;
   flex: 1;
 }
-
+.post-header__date {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 10px;
+}
 .post-header__close {
   width: 36px;
   height: 36px;
@@ -364,11 +467,13 @@ watch(
 }
 
 .post-stats {
-  padding: 12px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border-muted);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-
 .post-comments {
   flex: 1;
   min-height: 0;
@@ -468,16 +573,12 @@ watch(
   line-height: 1.45;
   white-space: pre-wrap;
 }
-
-.comment__meta {
+.post-stats__meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding-left: 4px;
-  font-size: 11px;
-  color: var(--text-soft);
+  gap: 6px 14px;
 }
-
 .comment__time {
   font-weight: 500;
 }
@@ -497,7 +598,31 @@ watch(
 .comment__action:hover {
   color: var(--accent);
 }
+.post-meta__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
 
+  svg {
+    flex-shrink: 0;
+    color: var(--icon-muted);
+  }
+}
+.post-meta__icon {
+  width: 14px;
+  height: 14px;
+}
+
+.post-stats__description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  word-break: break-word;
+}
 @keyframes comment-in {
   from {
     opacity: 0;
@@ -624,6 +749,55 @@ watch(
 .brands-fade-leave-to {
   opacity: 0;
   transform: translateY(6px);
+}
+/* ── Pins ── */
+.image-editor__pin {
+  position: absolute;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  cursor: default;
+}
+
+.pin-dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.image-editor__pin:hover .pin-dot {
+  transform: scale(1.3);
+}
+
+.pin-label {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--bg-overlay);
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  align-items: center;
+}
+
+.pin-label__category {
+  color: rgba(255, 255, 255, 0.65);
+}
+.pin-label__icon {
+  width: 17px;
+}
+.pin-label__brand {
+  color: #fff;
+  font-weight: 600;
 }
 
 @media (max-width: 980px) {

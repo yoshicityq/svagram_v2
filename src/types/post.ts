@@ -6,13 +6,10 @@ export type Post = {
   img_mimetype: string
   likes: number
   likedByMe: boolean
-  brand_accessory: string | null
-  brand_hat: string | null
-  brand_outwear: string | null
-  brand_bottom: string | null
-  brand_shoes: string | null
-  brand_bag: string | null
-  brand_glasses: string | null
+  category_list: PostPin[]
+  date: number
+  longitude: number
+  latitude: number
   imageUrl: string
 }
 
@@ -25,4 +22,12 @@ export type PostRating = {
   avgRating: number
   myRating: number | null
   ratingsCount: number
+}
+
+export type PostPin = {
+  id: string
+  xPercent: number
+  yPercent: number
+  category: string
+  brand: string
 }

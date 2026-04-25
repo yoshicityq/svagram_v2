@@ -1,5 +1,5 @@
 export type BrandCategory = {
-  id: number | null
+  id: string | null
   categoryName: string
   categoryValue: string
 }

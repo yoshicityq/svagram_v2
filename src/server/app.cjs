@@ -634,14 +634,19 @@ app.get('/posts/:id/comments/count', authRequired, (req, res, next) => {
   })
 })
 app.get('/posts', authRequired, (req, res, next) => {
-  const limit = Math.min(parseInt(req.query.limit ?? '20', 10) || 20, 50)
-  const offset = parseInt(req.query.offset ?? '0', 10) || 0
+  const viewerUserId = req.user?.id ?? null
+  const limit = Math.min(Number(req.query.limit) || 20, 100)
+  const offset = Math.max(Number(req.query.offset) || 0, 0)
 
-  Post.list({ userId: req.user.id, limit, offset }, (err, rows) => {
+  Post.list({ userId: viewerUserId, limit, offset }, (err, rows) => {
     if (err) return next(err)
 
     const posts = rows.map((p) => ({
       ...p,
+      category_list: p.category_list ? JSON.parse(p.category_list) : [],
+      date: Number(p.date),
+      longitude: Number(p.longitude),
+      latitude: Number(p.latitude),
       likes: Number(p.likes ?? 0),
       commentsCount: Number(p.commentsCount ?? 0),
       likedByMe: Boolean(p.likedByMe),
@@ -681,18 +686,22 @@ app.get('/users/:username/posts', authRequired, (req, res, next) => {
       return res.status(403).json({ message: 'This profile is private' })
     }
 
-    Post.listByUsername(username, { userId: req.user.id, limit, offset }, (err2, rows) => {
-      if (err2) return next(err2)
+    Post.listByUsername(username, { userId: req.user.id, limit, offset }, (err, rows) => {
+      if (err) return next(err)
 
       const posts = rows.map((p) => ({
         ...p,
+        category_list: p.category_list ? JSON.parse(p.category_list) : [],
         likes: Number(p.likes ?? 0),
+        longitude: Number(p.longitude),
+        latitude: Number(p.latitude),
+        date: Number(p.date),
         commentsCount: Number(p.commentsCount ?? 0),
         likedByMe: Boolean(p.likedByMe),
         imageUrl: `/posts/${p.id}/image`,
       }))
-
-      res.json({ posts, username, limit, offset })
+      const postsCount = posts.length
+      res.json({ posts, username, postsCount, limit, offset })
     })
   })
 })
@@ -720,7 +729,11 @@ app.get('/users/:username/liked-posts', authRequired, (req, res, next) => {
 
         const posts = rows.map((p) => ({
           ...p,
+          category_list: p.category_list ? JSON.parse(p.category_list) : [],
           likes: Number(p.likes ?? 0),
+          longitude: Number(p.longitude),
+          latitude: Number(p.latitude),
+          date: Number(p.date),
           commentsCount: Number(p.commentsCount ?? 0),
           likedByMe: Boolean(p.likedByMe),
           imageUrl: `/posts/${p.id}/image`,
@@ -760,7 +773,11 @@ app.get('/users/:username/rated-posts', authRequired, (req, res, next) => {
 
         const posts = rows.map((p) => ({
           ...p,
+          category_list: p.category_list ? JSON.parse(p.category_list) : [],
           likes: Number(p.likes ?? 0),
+          longitude: Number(p.longitude),
+          latitude: Number(p.latitude),
+          date: Number(p.date),
           commentsCount: Number(p.commentsCount ?? 0),
           likedByMe: Boolean(p.likedByMe),
           imageUrl: `/posts/${p.id}/image`,
@@ -811,6 +828,10 @@ app.get('/posts/:id', authRequired, (req, res, next) => {
     return res.json({
       post: {
         ...post,
+        category_list: post.category_list ? JSON.parse(post.category_list) : [],
+        longitude: Number(post.longitude),
+        latitude: Number(post.latitude),
+        date: Number(post.date),
         likes: Number(post.likes ?? 0),
         commentsCount: Number(post.commentsCount ?? 0),
         likedByMe: Boolean(post.likedByMe),
@@ -835,79 +856,89 @@ app.get('/posts/:id/likes', authRequired, (req, res, next) => {
 })
 app.post('/posts/create', authRequired, upload.single('image'), (req, res, next) => {
   try {
-    // 1) файл
     if (!req.file) {
       return res.status(400).json({ message: 'image is required' })
     }
 
-    // 2) поля формы
     const description = req.body.caption ?? req.body.description ?? ''
-    const city = req.body.city ?? null
-
-    // (если вы будете передавать бренды — берём из body, иначе ставим дефолты)
-    const brand_accessory = req.body.brand_accessory ?? ''
-    const brand_hat = req.body.brand_hat ?? ''
-    const brand_outwear = req.body.brand_outwear ?? ''
-    const brand_top = req.body.brand_top ?? ''
-    const brand_bottom = req.body.brand_bottom ?? ''
-    const brand_shoes = req.body.brand_shoes ?? ''
-    const brand_bag = req.body.brand_bag ?? ''
-    const brand_glasses = req.body.brand_glasses ?? ''
-
-    // 3) автор берётся из JWT (вы так и делали в /me)
     const username = req.user.username
+    const userId = req.user.id
     const sendToUser = req.app.get('sendToUser')
+    const category_list = req.body.category_list ?? '[]'
+    const date = req.body.date ?? new Date().toISOString()
+
+    try {
+      JSON.parse(category_list)
+    } catch {
+      return res.status(400).json({ message: 'category_list must be valid JSON' })
+    }
+
+    function returnCreatedPost(createdId) {
+      Post.findMetaById(createdId, userId, (err, post) => {
+        if (err) return next(err)
+
+        if (!post) {
+          return res.status(201).json({ ok: true, id: createdId })
+        }
+
+        return res.status(201).json({
+          ok: true,
+          post: {
+            ...post,
+            category_list: post.category_list ? JSON.parse(post.category_list) : [],
+            likes: Number(post.likes ?? 0),
+            commentsCount: Number(post.commentsCount ?? 0),
+            likedByMe: Boolean(post.likedByMe),
+            imageUrl: `/posts/${post.id}/image`,
+          },
+        })
+      })
+    }
 
     Post.create(
       {
         user: username,
         description,
-        img: req.file.buffer, // BLOB
+        img: req.file.buffer,
         img_mimetype: req.file.mimetype,
-        brand_accessory,
-        brand_hat,
-        brand_outwear,
-        brand_top,
-        brand_bottom,
-        brand_shoes,
-        brand_bag,
-        brand_glasses,
+        likes: 0,
+        people_liked: JSON.stringify([]),
+        latitude: req.body.latitude ?? null,
+        longitude: req.body.longitude ?? null,
+        category_list,
+        date,
       },
       (err, created) => {
         if (err) return next(err)
 
-        // Проверим количество постов у пользователя
-        Post.listByUsername(username, { userId: req.user.id }, (err, posts) => {
+        Post.listByUsername(username, { userId }, (err, posts) => {
           if (err) return next(err)
 
-          const titleID = 2 // 2 - ID титула "Swag machine"
+          const titleID = 2
 
-          // Если опубликовано 10 постов, проверим, выдан ли титул
           if (posts.length >= 1) {
-            // Проверим, есть ли уже титул у пользователя
-            Title.listEarned(req.user.id, (errList, earnedTitles) => {
+            Title.listEarned(userId, (errList, earnedTitles) => {
               if (errList) return next(errList)
 
-              // Проверим, есть ли титул "Swag machine" (ID титула 2)
               const hasTitle = earnedTitles.some((title) => title.id === titleID)
 
               if (!hasTitle) {
-                // Если титул не выдан, выдаем титул
-                Title.grant(req.user.id, titleID, (errGrant) => {
+                Title.grant(userId, titleID, (errGrant) => {
                   if (errGrant) return next(errGrant)
 
                   const now = Date.now()
+
                   Notification.create(
                     {
-                      recipient_user_id: req.user.id,
-                      actor_user_id: null, // Система или администратор
+                      recipient_user_id: userId,
+                      actor_user_id: null,
                       type: 'title',
                       source_type: 'system',
                       entity_type: 'user',
-                      entity_id: req.user.id,
+                      entity_id: userId,
                       title: 'notification.congratulations_title',
-                      text: `notification.achievement_text`,
-                      content: `notification.achievement_10_posts_content`,
+                      text: 'notification.achievement_text',
+                      content: 'notification.achievement_10_posts_content',
                       created_at: now,
                       is_read: 0,
                       metadata: JSON.stringify({
@@ -916,32 +947,27 @@ app.post('/posts/create', authRequired, upload.single('image'), (req, res, next)
                       }),
                     },
                     (nErr) => {
-                      if (nErr) return next(nErr) // Обработка ошибки
+                      if (nErr) return next(nErr)
 
-                      // Уведомление успешно создано
-                      console.log('Notification successfully created')
+                      sendToUser(userId, {
+                        type: 'notification',
+                        notification: {
+                          title: 'notification.system_title',
+                          text: 'notification.achievement_text',
+                          type: 'system',
+                        },
+                      })
 
-                      // Возвращаем ответ
-                      return res.status(201).json({ ok: true, id: created.id })
+                      return returnCreatedPost(created.id)
                     },
                   )
-                  sendToUser(req.user.id, {
-                    type: 'notification',
-                    notification: {
-                      title: 'notification.system_title',
-                      text: 'notification.achievement_text',
-                      type: 'system',
-                    },
-                  })
                 })
               } else {
-                // Если титул уже есть, просто возвращаем успешный ответ
-                return res.status(201).json({ ok: true, id: created.id })
+                return returnCreatedPost(created.id)
               }
             })
           } else {
-            // Если количество постов меньше 10, просто возвращаем успешный ответ
-            return res.status(201).json({ ok: true, id: created.id })
+            return returnCreatedPost(created.id)
           }
         })
       },

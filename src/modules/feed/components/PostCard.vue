@@ -2,14 +2,49 @@
   <div class="post-card">
     <div class="header">
       <UserProfile :username="post.user" :closable="false" />
+      <div class="header-stats">
+        <span class="header-coords">
+          <LocationIcon class="header-coords-icon" />{{ post.latitude.toFixed(3) }}
+          {{ post.longitude.toFixed(3) }}</span
+        >
+        <span>·</span>
+        <span class="header-time">{{ formatTime(post.date) }}</span>
+      </div>
     </div>
 
     <div class="body">
       <div class="post-image">
-        <img class="image" :src="`http://localhost:3000${post.imageUrl}`" alt="post image" />
+        <img
+          class="image"
+          :src="`http://localhost:3000${post.imageUrl}`"
+          alt="post image"
+          @mouseenter="isBrandsVisible = true"
+          @mouseout="isBrandsVisible = false"
+        />
+        <span
+          v-show="post && isBrandsVisible"
+          v-for="pin in post.category_list"
+          :key="pin.id"
+          class="image-editor__pin"
+          :style="{ left: `${pin.xPercent}%`, top: `${pin.yPercent}%` }"
+          @mouseenter="isBrandsVisible = true"
+        >
+          <span class="pin-dot" />
+          <span v-if="pin.category && pin.brand" class="pin-label">
+            <!-- <span v-if="pin.category" class="pin-label__category">{{
+                  $t(CategoryReadable(CategoryBackend(pin.category)!)!)
+                }}</span> -->
+            <component
+              v-if="pin.category"
+              :is="iconsContainer[pin.category]"
+              class="pin-label__icon"
+            />
+            <span v-if="pin.brand" class="pin-label__brand">{{ pin.brand }}</span>
+          </span>
+        </span>
       </div>
 
-      <div class="sidebar">
+      <!-- <div class="sidebar">
         <div v-if="brandEntries.length" class="brands-section">
           <span class="brands-label">{{ $t('helpers.brands') }}</span>
 
@@ -28,12 +63,12 @@
           </div>
         </div>
 
-        <div class="sidebar-footer">
-          <EstimatePost :post-id="post.id" :is-clickable="true" />
+      </div> -->
+      <div class="sidebar-footer">
+        <EstimatePost :post-id="post.id" :is-clickable="true" />
 
-          <div v-if="post.description" class="post-description">
-            <span>{{ post.description }}</span>
-          </div>
+        <div v-if="post.description" class="post-description">
+          <span>{{ post.description }}</span>
         </div>
       </div>
     </div>
@@ -41,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, type Component } from 'vue'
 
 import HatIcon from '@/assets/icons/categories/HatIcon.vue'
 import JacketIcon from '@/assets/icons/categories/JacketIcon.vue'
@@ -58,6 +93,8 @@ import type { Post } from '@/types/post'
 import AccessoryIcon from '@/assets/icons/categories/AccessoryIcon.vue'
 import BagIcon from '@/assets/icons/categories/BagIcon.vue'
 import GlassesIcon from '@/assets/icons/categories/GlassesIcon.vue'
+import { useI18n } from 'vue-i18n'
+import LocationIcon from '@/assets/icons/LocationIcon.vue'
 
 const props = defineProps<{
   post: Post
@@ -69,7 +106,17 @@ function parseBrands(value: string): string[] {
     .map((item) => item.trim())
     .filter(Boolean)
 }
-
+const isBrandsVisible = ref(false)
+const iconsContainer: Record<string, Component> = {
+  brand_hat: HatIcon,
+  brand_top: TshirtIcon,
+  brand_accessory: AccessoryIcon,
+  brand_glasses: GlassesIcon,
+  brand_bottom: PantsIcon,
+  brand_shoes: ShoesIcon,
+  brand_bag: BagIcon,
+  brand_outwear: JacketIcon,
+}
 const brandEntries = computed<Array<[string, string[]]>>(() => {
   return Object.entries(props.post).flatMap(([key, value]) => {
     if (!key.startsWith('brand')) {
@@ -89,7 +136,38 @@ const brandEntries = computed<Array<[string, string[]]>>(() => {
     return []
   })
 })
+const now = ref(Date.now())
+const { t } = useI18n()
+function getPluralKey(value: number, unit: 'minute' | 'hour' | 'day' | 'week'): string {
+  const mod10 = value % 10
+  const mod100 = value % 100
 
+  if (mod10 === 1 && mod100 !== 11) {
+    return `time.${unit}_ago_1`
+  }
+
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `time.${unit}_ago_2_4`
+  }
+
+  return `time.${unit}_ago_5`
+}
+function formatTime(ts: number): string {
+  const diff = now.value - ts
+  const m = Math.floor(diff / 60000)
+
+  if (m < 1) return t('time.just_now')
+  if (m < 60) return m === 1 ? t('time.minute_ago_1') : `${m} ${t(getPluralKey(m, 'minute'))}`
+
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h} ${t(getPluralKey(h, 'hour'))}`
+
+  const d = Math.floor(h / 24)
+  if (d < 7) return `${d} ${t(getPluralKey(d, 'day'))}`
+
+  const w = Math.floor(d / 7)
+  return `${w} ${t(getPluralKey(w, 'week'))}`
+}
 function getBrandIcon(category: string) {
   const iconMap: Record<string, unknown> = {
     brand_hat: HatIcon,
@@ -121,11 +199,32 @@ function getBrandIcon(category: string) {
   width: 100%;
   box-sizing: border-box;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--chip-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.header-coords {
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  &-icon {
+    width: 15px;
+  }
+}
+.header-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
 .body {
   display: flex;
+  flex-direction: column;
   width: fit-content;
   max-width: 100%;
 }
@@ -136,7 +235,10 @@ function getBrandIcon(category: string) {
   max-width: 100%;
   overflow: hidden;
   background: var(--image-bg);
-  border-bottom-left-radius: var(--radius-sm);
+  // border-bottom-left-radius: var(--radius-sm);
+  border: 1px solid var(--chip-border);
+
+  position: relative;
 }
 
 .image {
@@ -150,7 +252,6 @@ function getBrandIcon(category: string) {
 .sidebar {
   width: 260px;
   flex-shrink: 0;
-  border-left: 1px solid var(--chip-border);
   display: flex;
   flex-direction: column;
 }
@@ -217,23 +318,69 @@ function getBrandIcon(category: string) {
 }
 
 .sidebar-footer {
-  border-top: 1px solid var(--chip-border);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   margin-top: auto;
 }
 
 .post-description {
   font-size: 13px;
   line-height: 1.5;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   word-break: break-word;
   overflow-wrap: anywhere;
   padding-top: 10px;
-  border-top: 1px solid var(--chip-border);
   max-height: 150px;
   overflow-y: auto;
+}
+/* ── Pins ── */
+.image-editor__pin {
+  position: absolute;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  cursor: default;
+}
+
+.pin-dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.image-editor__pin:hover .pin-dot {
+  transform: scale(1.3);
+}
+
+.pin-label {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 2px 6px;
+  background: var(--bg-overlay);
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  align-items: center;
+}
+
+.pin-label__category {
+  color: rgba(255, 255, 255, 0.65);
+}
+.pin-label__icon {
+  width: 17px;
+}
+.pin-label__brand {
+  color: #fff;
+  font-weight: 600;
 }
 </style>
